@@ -596,13 +596,152 @@ function sincronizarToggleSobra() {
 }
 
 // --- CONFIGURAÇÃO: TEMA ESCURO (DARK MODE) ---
+// Usamos injeção dinâmica de <style> para garantir máxima prioridade
+// na cascata CSS, superando os estilos compilados do Tailwind.
+const DARK_STYLES = `
+  /* === BASE === */
+  body { background-color: #0b0f19 !important; color: #e2e8f0 !important; }
+  
+  /* === CARTÕES E PAINÉIS === */
+  .bg-white { background-color: #131b2e !important; color: #e2e8f0 !important; }
+  .bg-slate-50 { background-color: #0b0f19 !important; }
+  .bg-slate-800 { background-color: #060d1a !important; }
+  .bg-slate-100 { background-color: #1e293b !important; }
+
+  /* === BORDAS === */
+  .border-slate-100, .border-slate-200, .border-slate-300 { border-color: #1e2d45 !important; }
+  .divide-y > *, .divide-slate-100 > * { border-color: #1e2d45 !important; }
+
+  /* === TEXTOS === */
+  .text-slate-900, .text-slate-800 { color: #f1f5f9 !important; }
+  .text-slate-700 { color: #cbd5e1 !important; }
+  .text-slate-600, .text-slate-500 { color: #94a3b8 !important; }
+  .text-slate-400 { color: #64748b !important; }
+  .text-emerald-800 { color: #34d399 !important; }
+  .text-emerald-700 { color: #34d399 !important; }
+  .text-rose-700 { color: #f87171 !important; }
+  .text-violet-700 { color: #c084fc !important; }
+
+  /* === BOTÕES DE AÇÃO RÁPIDA (O PROBLEMA PRINCIPAL) === */
+  .bg-emerald-100 {
+    background-color: #052e16 !important;
+    border-color: #166534 !important;
+    color: #4ade80 !important;
+  }
+  .bg-emerald-100:hover { background-color: #14532d !important; }
+
+  .bg-rose-100 {
+    background-color: #1c0a0a !important;
+    border-color: #7f1d1d !important;
+    color: #f87171 !important;
+  }
+  .bg-rose-100:hover { background-color: #3b0d0d !important; }
+
+  .bg-violet-100 {
+    background-color: #130a2e !important;
+    border-color: #4c1d95 !important;
+    color: #c084fc !important;
+  }
+  .bg-violet-100:hover { background-color: #1e0a4a !important; }
+
+  .bg-emerald-50 {
+    background-color: #052e16 !important;
+    border-color: #166534 !important;
+    color: #4ade80 !important;
+  }
+  .bg-blue-50 {
+    background-color: #0c1a3a !important;
+    border-color: #1e40af !important;
+    color: #60a5fa !important;
+  }
+
+  /* === ICONES CIRCULARES E BADGES === */
+  .bg-emerald-100.text-emerald-600 {
+    background-color: #052e16 !important;
+    color: #4ade80 !important;
+  }
+  .bg-rose-100.text-rose-600 {
+    background-color: #1c0a0a !important;
+    color: #f87171 !important;
+  }
+  .bg-violet-100.text-violet-600 {
+    background-color: #130a2e !important;
+    color: #c084fc !important;
+  }
+  .text-emerald-600 { color: #34d399 !important; }
+  .text-rose-600 { color: #f87171 !important; }
+  .text-violet-600 { color: #c084fc !important; }
+  .text-emerald-500 { color: #10b981 !important; }
+  .text-emerald-400 { color: #34d399 !important; }
+  .text-violet-500 { color: #a78bfa !important; }
+
+  /* === GRADIENTES (Seção de Investimentos) === */
+  .from-violet-50.to-indigo-50, .bg-gradient-to-r.from-violet-50 {
+    background: linear-gradient(to right, #1a0535, #0f0c3a) !important;
+    border-color: #4338ca !important;
+  }
+  #total-investido-badge {
+    background-color: rgba(139, 92, 246, 0.2) !important;
+    color: #c084fc !important;
+    border: 1px solid rgba(139, 92, 246, 0.4) !important;
+  }
+
+  /* === HOVER NAS LISTAS === */
+  .hover\\:bg-slate-50:hover, .group:hover { background-color: #1a2540 !important; }
+  .hover\\:bg-slate-100:hover { background-color: #1e293b !important; }
+  .hover\\:bg-emerald-50:hover { background-color: #052e16 !important; }
+  .hover\\:bg-emerald-200:hover { background-color: #14532d !important; }
+  .hover\\:bg-rose-200:hover { background-color: #3b0d0d !important; }
+  .hover\\:bg-violet-200:hover { background-color: #1e0a4a !important; }
+
+  /* === FORMULÁRIOS === */
+  input, select, textarea {
+    background-color: #0b1628 !important;
+    color: #f1f5f9 !important;
+    border-color: #1e2d45 !important;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+    outline: none !important;
+  }
+  input::placeholder { color: #475569 !important; }
+
+  /* === BOTÃO HISTÓRICO E RELATÓRIOS === */
+  .bg-slate-800 { background-color: #0d1b30 !important; }
+
+  /* === CABEÇALHO === */
+  header, .bg-emerald-600 { background-color: #052e1c !important; }
+
+  /* === BARRA DE PROGRESSO (categorias) === */
+  .bg-slate-100.rounded-full { background-color: #1e293b !important; }
+
+  /* === MODAIS === */
+  .modal-overlay .bg-white { background-color: #0e1829 !important; border-color: #1e2d45 !important; }
+  .modal-overlay .bg-slate-800 { background-color: #060d1a !important; border-bottom: 1px solid #1e2d45 !important; }
+
+  /* === SCROLLBAR === */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0b0f19; }
+  ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #334155; }
+`;
+
 function aplicarTemaEscuro() {
+  let styleTag = document.getElementById('dark-mode-overrides');
   if (modoEscuroAtivo) {
+    if (!styleTag) {
+      styleTag = document.createElement('style');
+      styleTag.id = 'dark-mode-overrides';
+      document.head.appendChild(styleTag);
+    }
+    styleTag.textContent = DARK_STYLES;
     document.body.classList.add('dark');
-    document.documentElement.classList.add('dark');
   } else {
+    if (styleTag) {
+      styleTag.textContent = '';
+    }
     document.body.classList.remove('dark');
-    document.documentElement.classList.remove('dark');
   }
 }
 
