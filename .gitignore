@@ -3,3 +3,5 @@ instaladores/
 .DS_Store
 releases/
 dist/
+main.js
+preload.js

@@ -1,89 +1,13 @@
 {
-  "name": "meu-dinheiro",
-  "version": "2.3.2",
+  "name": "meu-dinheiro-web",
+  "version": "3.0.0",
   "description": "Controle Financeiro Descomplicado — Organize suas finanças com facilidade",
-  "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "build:css": "npx tailwindcss -i ./src-styles/input.css -o ./tailwind-output.css --minify",
-    "prebuild": "npm run build:css",
-    "prestart": "npm run build:css",
-    "dist": "npm run build:css && electron-builder",
-    "dist:mac": "npm run build:css && electron-builder --mac",
-    "dist:win": "npm run build:css && electron-builder --win"
+    "build:css": "npx tailwindcss -i ./src-styles/input.css -o ./tailwind-output.css --minify"
   },
   "author": "Meu Dinheiro",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^33.0.0",
-    "electron-builder": "^25.0.0",
     "tailwindcss": "^3.4.0"
-  },
-  "dependencies": {
-    "electron-updater": "^6.8.3",
-    "lucide": "^0.460.0"
-  },
-  "build": {
-    "appId": "com.meudinheiro.app",
-    "productName": "Meu Dinheiro",
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "SidyFurtado",
-        "repo": "Meu-Dinheiro"
-      }
-    ],
-    "directories": {
-      "output": "instaladores"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "app.html",
-      "style.css",
-      "app.js",
-      "tailwind-output.css",
-      "assets/**/*",
-      "node_modules/lucide/**/*"
-    ],
-    "mac": {
-      "category": "public.app-category.finance",
-      "icon": "assets/icon.png",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": ["universal"]
-        },
-        {
-          "target": "zip",
-          "arch": ["universal"]
-        }
-      ]
-    },
-    "win": {
-      "icon": "assets/icon.png",
-      "publisherName": "Meu Dinheiro",
-      "requestedExecutionLevel": "asInvoker",
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "deleteAppDataOnUninstall": false,
-      "perMachine": false,
-      "installerLanguages": [
-        "pt_BR"
-      ],
-      "language": "1046"
-    }
   }
 }

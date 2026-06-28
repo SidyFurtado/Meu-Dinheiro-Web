@@ -1,6 +1,9 @@
 // =============================================
 // CONTROLE FINANCEIRO DESCOMPLICADO — App JS
 // =============================================
+import { db, auth } from './firebase-config.js';
+import { collection, addDoc, updateDoc, deleteDoc, getDocs, doc, query, where, getDoc, setDoc } from 'firebase/firestore';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, OAuthProvider, signInWithPopup } from 'firebase/auth';
 
 // --- CONFIGURAÇÕES DE CATEGORIAS ---
 const CATEGORIAS_ENTRADA = ['Salário', 'Renda Extra', 'Rendimentos', 'Outros'];
@@ -152,21 +155,142 @@ function mostrarToast(mensagem, tipo = 'success') {
   }, 4000);
 }
 
-// --- BANCO DE DADOS LOCAL (LocalStorage) ---
-function carregarTransacoes() {
-  transacoes = JSON.parse(localStorage.getItem('transacoes_app') || '[]');
-  investimentos = JSON.parse(localStorage.getItem('investimentos_app') || '[]');
-  ordenarTransacoes();
-  atualizarTela();
+// --- AUTENTICAÇÃO ---
+let modoAuth = 'login';
+
+window.alternarModoAuth = () => {
+  modoAuth = modoAuth === 'login' ? 'cadastro' : 'login';
+  document.getElementById('btn-auth-text').innerText = modoAuth === 'login' ? 'Entrar' : 'Criar Conta';
+  document.getElementById('auth-switch-text').innerText = modoAuth === 'login' ? 'Não tem uma conta?' : 'Já tem uma conta?';
+  document.getElementById('btn-auth-switch').innerText = modoAuth === 'login' ? 'Criar conta' : 'Fazer login';
+};
+
+document.getElementById('form-auth').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('auth-email').value;
+  const senha = document.getElementById('auth-senha').value;
+  const btn = document.getElementById('btn-auth-submit');
+  const txtOriginal = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Aguarde...';
+  lucide.createIcons({ nodes: [btn] });
+
+  try {
+    if (modoAuth === 'login') {
+      await signInWithEmailAndPassword(auth, email, senha);
+    } else {
+      await createUserWithEmailAndPassword(auth, email, senha);
+    }
+  } catch (error) {
+    let msg = "Erro na autenticação.";
+    if (error.code === 'auth/invalid-credential') msg = "E-mail ou senha incorretos.";
+    if (error.code === 'auth/email-already-in-use') msg = "E-mail já está em uso.";
+    if (error.code === 'auth/weak-password') msg = "A senha deve ter pelo menos 6 caracteres.";
+    mostrarToast(msg, "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = txtOriginal;
+    lucide.createIcons({ nodes: [btn] });
+  }
+});
+
+window.fazerLogout = async () => {
+  try {
+    await signOut(auth);
+    fecharModalConfiguracoes();
+  } catch (error) {
+    mostrarToast("Erro ao sair da conta.", "error");
+  }
+};
+
+window.fazerLoginGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+  provider.addScope('profile');
+  provider.addScope('email');
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (error) {
+    if (error.code === 'auth/popup-closed-by-user') return;
+    console.error("Erro no login com Google:", error);
+    mostrarToast("Erro no Google: " + error.message, "error");
+  }
+};
+
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    document.getElementById('login-container').classList.add('hidden');
+    document.getElementById('app-container').classList.remove('hidden');
+    
+    // Carregar perfil e sobra do Firestore
+    try {
+      const userDocRef = doc(db, "usuarios_app", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      if (userDocSnap.exists()) {
+        const dadosUser = userDocSnap.data();
+        meuPerfil = {
+          nome: dadosUser.nome || '',
+          foto: dadosUser.foto || null,
+          telefone: dadosUser.telefone || ''
+        };
+        sobraAutomaticaAtiva = dadosUser.sobraAutomatica !== false;
+      } else {
+        // Criar perfil inicial
+        meuPerfil = {
+          nome: user.email ? user.email.split('@')[0] : 'Usuário',
+          foto: null,
+          telefone: ''
+        };
+        sobraAutomaticaAtiva = true;
+        await setDoc(userDocRef, { ...meuPerfil, sobraAutomatica: sobraAutomaticaAtiva });
+      }
+      
+      // Salvar em cache local e atualizar a UI
+      localStorage.setItem('meuPerfil', JSON.stringify(meuPerfil));
+      localStorage.setItem('sobraAutomatica', JSON.stringify(sobraAutomaticaAtiva));
+      atualizarDadosPerfilHeader();
+      sincronizarToggleSobra();
+    } catch (error) {
+      console.error("Erro ao sincronizar perfil do Firestore:", error);
+    }
+    
+    carregarTransacoes();
+  } else {
+    document.getElementById('login-container').classList.remove('hidden');
+    document.getElementById('app-container').classList.add('hidden');
+    transacoes = [];
+    investimentos = [];
+  }
+});
+
+// --- BANCO DE DADOS NUVEM (Firebase Cloud Firestore) ---
+async function carregarTransacoes() {
+  if (!auth.currentUser) return;
+  try {
+    const qT = query(collection(db, "transacoes_app"), where("uid", "==", auth.currentUser.uid));
+    const querySnapshotT = await getDocs(qT);
+    transacoes = [];
+    querySnapshotT.forEach((docSnap) => {
+      transacoes.push({ id: docSnap.id, ...docSnap.data() });
+    });
+
+    const qI = query(collection(db, "investimentos_app"), where("uid", "==", auth.currentUser.uid));
+    const querySnapshotI = await getDocs(qI);
+    investimentos = [];
+    querySnapshotI.forEach((docSnap) => {
+      investimentos.push({ id: docSnap.id, ...docSnap.data() });
+    });
+
+    ordenarTransacoes();
+    atualizarTela();
+  } catch (error) {
+    console.error("Erro ao carregar dados do Firebase:", error);
+    mostrarToast("Erro ao carregar dados da nuvem.", "error");
+  }
 }
 
-function salvarTransacoes() {
-  localStorage.setItem('transacoes_app', JSON.stringify(transacoes));
-}
-
-function salvarInvestimentos() {
-  localStorage.setItem('investimentos_app', JSON.stringify(investimentos));
-}
+// As funções salvarTransacoes() e salvarInvestimentos() antigas não são mais usadas
+// pois salvamos documento a documento diretamente no Firestore.
 
 function ordenarTransacoes() {
   transacoes.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -187,6 +311,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     fecharModal();
     fecharModalPerfil();
+    fecharModalConfiguracoes();
     fecharHistorico();
     fecharModalInvestimento();
     fecharModalNotificacoes();
@@ -196,11 +321,12 @@ document.addEventListener('keydown', (e) => {
 
 // Fechar modais clicando no backdrop
 document.addEventListener('DOMContentLoaded', () => {
-  ['modal-cadastro', 'modal-perfil', 'modal-historico', 'modal-investimento'].forEach(id => {
+  ['modal-cadastro', 'modal-perfil', 'modal-configuracoes', 'modal-historico', 'modal-investimento'].forEach(id => {
     document.getElementById(id).addEventListener('click', (e) => {
       if (e.target === e.currentTarget) {
         if (id === 'modal-cadastro') fecharModal();
         else if (id === 'modal-perfil') fecharModalPerfil();
+        else if (id === 'modal-configuracoes') fecharModalConfiguracoes();
         else if (id === 'modal-investimento') fecharModalInvestimento();
         else fecharHistorico();
       }
@@ -223,11 +349,16 @@ window.pedirConfirmacaoDelete = (id) => {
   lucide.createIcons({ nodes: [container] });
 };
 
-window.confirmarDelete = (id) => {
-  transacoes = transacoes.filter(t => t.id !== id);
-  salvarTransacoes();
-  mostrarToast("Conta apagada.", "success");
-  atualizarTela();
+window.confirmarDelete = async (id) => {
+  try {
+    await deleteDoc(doc(db, "transacoes_app", id));
+    transacoes = transacoes.filter(t => t.id !== id);
+    mostrarToast("Conta apagada.", "success");
+    atualizarTela();
+  } catch (error) {
+    console.error("Erro ao deletar transação:", error);
+    mostrarToast("Erro ao apagar conta.", "error");
+  }
 };
 
 window.cancelarDelete = (id) => {
@@ -249,11 +380,17 @@ window.abrirModalPerfil = () => {
   const preview = document.getElementById('perfil-foto-preview');
   preview.src = meuPerfil.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(meuPerfil.nome || 'Usuário')}&background=cbd5e1&color=fff`;
   avatarBase64Temporario = null;
-  sincronizarToggleSobra();
   abrirModalGenerico('modal-perfil');
 };
 
 window.fecharModalPerfil = () => { fecharModalGenerico('modal-perfil'); };
+
+window.abrirModalConfiguracoes = () => {
+  sincronizarToggleSobra();
+  abrirModalGenerico('modal-configuracoes');
+};
+
+window.fecharModalConfiguracoes = () => { fecharModalGenerico('modal-configuracoes'); };
 
 window.carregarFoto = (event) => {
   const file = event.target.files[0];
@@ -270,23 +407,46 @@ window.carregarFoto = (event) => {
   }
 };
 
-document.getElementById('form-perfil').addEventListener('submit', (e) => {
+document.getElementById('form-perfil').addEventListener('submit', async (e) => {
   e.preventDefault();
   meuPerfil.nome = document.getElementById('perfil-nome').value.trim();
   meuPerfil.telefone = document.getElementById('perfil-telefone').value.trim();
   if (avatarBase64Temporario) meuPerfil.foto = avatarBase64Temporario;
+  
+  // Salvar em cache local e na UI
   localStorage.setItem('meuPerfil', JSON.stringify(meuPerfil));
   atualizarDadosPerfilHeader();
+  
+  if (auth.currentUser) {
+    try {
+      const userDocRef = doc(db, "usuarios_app", auth.currentUser.uid);
+      await setDoc(userDocRef, { ...meuPerfil, sobraAutomatica: sobraAutomaticaAtiva }, { merge: true });
+    } catch (error) {
+      console.error("Erro ao salvar perfil no Firestore:", error);
+      mostrarToast("Erro ao sincronizar com nuvem, salvo apenas localmente.", "error");
+    }
+  }
+  
   mostrarToast("Perfil atualizado com sucesso!");
   fecharModalPerfil();
 });
 
 // --- TOGGLE SOBRA AUTOMÁTICA ---
-window.toggleSobraAutomatica = () => {
+window.toggleSobraAutomatica = async () => {
   sobraAutomaticaAtiva = !sobraAutomaticaAtiva;
   localStorage.setItem('sobraAutomatica', JSON.stringify(sobraAutomaticaAtiva));
   sincronizarToggleSobra();
   atualizarTela();
+  
+  if (auth.currentUser) {
+    try {
+      const userDocRef = doc(db, "usuarios_app", auth.currentUser.uid);
+      await setDoc(userDocRef, { sobraAutomatica: sobraAutomaticaAtiva }, { merge: true });
+    } catch (error) {
+      console.error("Erro ao salvar configuração de sobra no Firestore:", error);
+    }
+  }
+  
   mostrarToast(
     sobraAutomaticaAtiva
       ? 'Sobra automática ativada! 🎉'
@@ -313,7 +473,7 @@ function sincronizarToggleSobra() {
 }
 
 // --- LÓGICA DE SALVAR / EDITAR TRANSAÇÃO ---
-document.getElementById('form-transacao').addEventListener('submit', (e) => {
+document.getElementById('form-transacao').addEventListener('submit', async (e) => {
   e.preventDefault();
   const tipo = document.getElementById('form-tipo').value;
   const descricao = document.getElementById('form-desc').value;
@@ -325,25 +485,43 @@ document.getElementById('form-transacao').addEventListener('submit', (e) => {
 
   if (!descricao || isNaN(valor) || valor <= 0 || !categoria) return;
 
-  if (idTransacaoEmEdicao) {
-    const index = transacoes.findIndex(t => t.id === idTransacaoEmEdicao);
-    if (index !== -1) {
-      transacoes[index] = { ...transacoes[index], type: tipo, description: descricao, amount: valor, category: categoria, date: data };
-      mostrarToast("Conta atualizada com sucesso!");
+  const btnSalvar = document.getElementById('btn-salvar');
+  const btnContent = btnSalvar.innerHTML;
+  btnSalvar.disabled = true;
+  btnSalvar.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Salvando...';
+  lucide.createIcons({ nodes: [btnSalvar] });
+
+  try {
+    if (idTransacaoEmEdicao) {
+      const index = transacoes.findIndex(t => t.id === idTransacaoEmEdicao);
+      if (index !== -1) {
+        const payload = { type: tipo, description: descricao, amount: valor, category: categoria, date: data, uid: auth.currentUser.uid };
+        await updateDoc(doc(db, "transacoes_app", idTransacaoEmEdicao), payload);
+        transacoes[index] = { id: idTransacaoEmEdicao, ...payload };
+        mostrarToast("Conta atualizada com sucesso!");
+      }
+    } else {
+      const payload = { type: tipo, description: descricao, amount: valor, category: categoria, date: data, uid: auth.currentUser.uid };
+      const docRef = await addDoc(collection(db, "transacoes_app"), payload);
+      transacoes.push({ id: docRef.id, ...payload });
+      mostrarToast("Conta adicionada com sucesso!");
     }
-  } else {
-    transacoes.push({ id: crypto.randomUUID(), type: tipo, description: descricao, amount: valor, category: categoria, date: data });
-    mostrarToast("Conta adicionada com sucesso!");
+
+    const [anoStr, mesStr] = data.split('-');
+    dataVisualizacao.setFullYear(parseInt(anoStr));
+    dataVisualizacao.setMonth(parseInt(mesStr) - 1);
+
+    ordenarTransacoes();
+    atualizarTela();
+    fecharModal();
+  } catch (error) {
+    console.error("Erro ao salvar transação:", error);
+    mostrarToast("Erro ao salvar na nuvem.", "error");
+  } finally {
+    btnSalvar.disabled = false;
+    btnSalvar.innerHTML = btnContent;
+    lucide.createIcons({ nodes: [btnSalvar] });
   }
-
-  const [anoStr, mesStr] = data.split('-');
-  dataVisualizacao.setFullYear(parseInt(anoStr));
-  dataVisualizacao.setMonth(parseInt(mesStr) - 1);
-
-  salvarTransacoes();
-  ordenarTransacoes();
-  atualizarTela();
-  fecharModal();
 });
 
 // --- FUNÇÕES DE INTERFACE DO MODAL DE CADASTRO ---
@@ -477,7 +655,7 @@ window.abrirModalInvestimento = (idEditar) => {
 
 window.fecharModalInvestimento = () => { fecharModalGenerico('modal-investimento'); idInvestimentoEmEdicao = null; };
 
-document.getElementById('form-investimento').addEventListener('submit', (e) => {
+document.getElementById('form-investimento').addEventListener('submit', async (e) => {
   e.preventDefault();
   const descricao = document.getElementById('inv-desc').value.trim();
   const valor = parseFloat(document.getElementById('inv-valor').value);
@@ -488,25 +666,43 @@ document.getElementById('form-investimento').addEventListener('submit', (e) => {
 
   if (!descricao || isNaN(valor) || valor <= 0 || !categoria || !data) return;
 
-  if (idInvestimentoEmEdicao) {
-    const index = investimentos.findIndex(i => i.id === idInvestimentoEmEdicao);
-    if (index !== -1) {
-      investimentos[index] = { ...investimentos[index], description: descricao, amount: valor, category: categoria, date: data };
-      mostrarToast('Investimento atualizado com sucesso!');
+  const btnSalvar = document.getElementById('btn-salvar-inv');
+  const btnContent = btnSalvar.innerHTML;
+  btnSalvar.disabled = true;
+  btnSalvar.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Salvando...';
+  lucide.createIcons({ nodes: [btnSalvar] });
+
+  try {
+    if (idInvestimentoEmEdicao) {
+      const index = investimentos.findIndex(i => i.id === idInvestimentoEmEdicao);
+      if (index !== -1) {
+        const payload = { description: descricao, amount: valor, category: categoria, date: data, uid: auth.currentUser.uid };
+        await updateDoc(doc(db, "investimentos_app", idInvestimentoEmEdicao), payload);
+        investimentos[index] = { id: idInvestimentoEmEdicao, ...payload };
+        mostrarToast('Investimento atualizado com sucesso!');
+      }
+    } else {
+      const payload = { description: descricao, amount: valor, category: categoria, date: data, uid: auth.currentUser.uid };
+      const docRef = await addDoc(collection(db, "investimentos_app"), payload);
+      investimentos.push({ id: docRef.id, ...payload });
+      mostrarToast('Investimento registrado com sucesso!');
     }
-  } else {
-    investimentos.push({ id: crypto.randomUUID(), description: descricao, amount: valor, category: categoria, date: data });
-    mostrarToast('Investimento registrado com sucesso!');
+
+    const [anoStr, mesStr] = data.split('-');
+    dataVisualizacao.setFullYear(parseInt(anoStr));
+    dataVisualizacao.setMonth(parseInt(mesStr) - 1);
+
+    ordenarTransacoes();
+    atualizarTela();
+    fecharModalInvestimento();
+  } catch (error) {
+    console.error("Erro ao salvar investimento:", error);
+    mostrarToast("Erro ao salvar na nuvem.", "error");
+  } finally {
+    btnSalvar.disabled = false;
+    btnSalvar.innerHTML = btnContent;
+    lucide.createIcons({ nodes: [btnSalvar] });
   }
-
-  const [anoStr, mesStr] = data.split('-');
-  dataVisualizacao.setFullYear(parseInt(anoStr));
-  dataVisualizacao.setMonth(parseInt(mesStr) - 1);
-
-  salvarInvestimentos();
-  ordenarTransacoes();
-  atualizarTela();
-  fecharModalInvestimento();
 });
 
 window.pedirConfirmacaoDeleteInv = (id) => {
@@ -522,11 +718,16 @@ window.pedirConfirmacaoDeleteInv = (id) => {
   lucide.createIcons({ nodes: [container] });
 };
 
-window.confirmarDeleteInv = (id) => {
-  investimentos = investimentos.filter(i => i.id !== id);
-  salvarInvestimentos();
-  mostrarToast('Investimento apagado.', 'success');
-  atualizarTela();
+window.confirmarDeleteInv = async (id) => {
+  try {
+    await deleteDoc(doc(db, "investimentos_app", id));
+    investimentos = investimentos.filter(i => i.id !== id);
+    mostrarToast('Investimento apagado.', 'success');
+    atualizarTela();
+  } catch (error) {
+    console.error("Erro ao deletar investimento:", error);
+    mostrarToast("Erro ao apagar investimento.", "error");
+  }
 };
 
 window.cancelarDeleteInv = () => {
@@ -937,7 +1138,7 @@ window.processarImportacao = (event) => {
         localStorage.setItem('meuPerfil', JSON.stringify(dados.meuPerfil));
         meuPerfil = dados.meuPerfil;
       }
-      fecharModalPerfil();
+      fecharModalConfiguracoes();
       mostrarToast("Backup restaurado!");
       carregarTransacoes();
       atualizarDadosPerfilHeader();
@@ -951,239 +1152,11 @@ window.processarImportacao = (event) => {
 
 // --- INICIALIZAÇÃO DA PÁGINA ---
 atualizarDadosPerfilHeader();
-carregarTransacoes();
 lucide.createIcons();
-
-// Detecta macOS e exibe espaço para o semáforo (botões de controle da janela)
-if (window.electronAPI && window.electronAPI.platform === 'darwin') {
-  const titlebarSpace = document.getElementById('macos-titlebar-space');
-  if (titlebarSpace) titlebarSpace.classList.remove('hidden');
-}
-
-// =============================================
-// SISTEMA DE ATUALIZAÇÃO AUTOMÁTICA
-// =============================================
-
-/** URL do JSON de versão hospedado no GitHub Pages */
-const UPDATE_JSON_URL = 'https://sidyfurtado.github.io/Meu-Dinheiro/version.json';
-
-/** URL do instalador a baixar — preenchida pelo verificarAtualizacao() */
-let _urlDownloadAtual = '';
-
-/**
- * Compara duas strings de versão semver (ex: "2.0.0" vs "2.1.0").
- * Retorna  1 se b > a, -1 se a > b, 0 se iguais.
- */
-function compararVersoes(a, b) {
-  const pa = a.split('.').map(Number);
-  const pb = b.split('.').map(Number);
-  for (let i = 0; i < 3; i++) {
-    if ((pb[i] || 0) > (pa[i] || 0)) return 1;
-    if ((pa[i] || 0) > (pb[i] || 0)) return -1;
-  }
-  return 0;
-}
-
-/** Exibe o modal de atualização com animação de entrada */
-function exibirModalUpdate(versaoAtual, versaoNova, urlDownload, changelog = []) {
-  _urlDownloadAtual = urlDownload;
-
-  document.getElementById('update-versao-atual').textContent = `v${versaoAtual}`;
-  document.getElementById('update-versao-nova').textContent  = `v${versaoNova}`;
-
-  const containerChangelog = document.getElementById('update-changelog-container');
-  const listChangelog = document.getElementById('update-changelog-list');
-  if (changelog && changelog.length > 0 && containerChangelog) {
-    listChangelog.innerHTML = changelog.map(item => `<li>${escaparHTML(item)}</li>`).join('');
-    containerChangelog.classList.remove('hidden');
-  } else if (containerChangelog) {
-    containerChangelog.classList.add('hidden');
-  }
-
-  const modal = document.getElementById('modal-update');
-  const card  = document.getElementById('modal-update-card');
-
-  // Renderiza os ícones Lucide dentro do modal
-  lucide.createIcons({ nodes: [modal] });
-
-  // Exibe o modal e anima o card
-  modal.classList.remove('hidden');
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      card.classList.remove('scale-95', 'opacity-0');
-      card.classList.add('scale-100', 'opacity-100');
-    });
-  });
-}
-
-/** Fecha o modal de atualização com animação de saída */
-window.fecharModalUpdate = () => {
-  const modal = document.getElementById('modal-update');
-  const card  = document.getElementById('modal-update-card');
-
-  card.classList.remove('scale-100', 'opacity-100');
-  card.classList.add('scale-95', 'opacity-0');
-
-  setTimeout(() => modal.classList.add('hidden'), 300);
-};
-
-/** Inicia o download do instalador via IPC (abre no navegador do sistema) */
-window.baixarAtualizacao = async () => {
-  const btn = document.getElementById('btn-baixar-update');
-  btn.disabled = true;
-  btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i><span>Iniciando download...</span>';
-  lucide.createIcons({ nodes: [btn] });
-
-  const isMac = window.electronAPI && window.electronAPI.platform === 'darwin';
-
-  // macOS: sempre abre o .dmg no navegador (electron-updater requer assinatura Apple)
-  if (isMac && _urlDownloadAtual) {
-    await window.electronAPI.abrirDownload(_urlDownloadAtual);
-    setTimeout(() => {
-      window.fecharModalUpdate();
-      mostrarToast('Download iniciado no navegador! Instale após concluir.', 'success');
-    }, 1000);
-    return;
-  }
-
-  // Windows: usa electron-updater para baixar em background
-  if (window.electronAPI && window.electronAPI.baixarAtualizacao) {
-    window.electronAPI.baixarAtualizacao();
-    mostrarToast('Baixando atualização em segundo plano...', 'info');
-    adicionarNotificacaoDownload(document.getElementById('update-versao-nova').textContent.replace('v', ''));
-    setTimeout(() => window.fecharModalUpdate(), 1000);
-  } else if (_urlDownloadAtual) {
-    // Fallback: abre no navegador
-    if (window.electronAPI && window.electronAPI.abrirDownload) {
-      await window.electronAPI.abrirDownload(_urlDownloadAtual);
-    } else {
-      window.open(_urlDownloadAtual, '_blank');
-    }
-    setTimeout(() => {
-      window.fecharModalUpdate();
-      mostrarToast('Download iniciado! Instale após concluir.', 'success');
-    }, 1500);
-  }
-};
-
-/**
- * Verifica se há nova versão (Modo manual - fallback).
- * O electron-updater em main.js cuida da verificação automática;
- * aqui apenas exibe um toast informativo se acionado manualmente.
- */
-async function verificarAtualizacao(manual = false) {
-  if (manual) mostrarToast('Buscando atualizações em segundo plano...', 'info');
-}
 
 // ==========================================
 // SISTEMA DE NOTIFICAÇÕES (NATIVE IN-APP)
 // ==========================================
-
-if (window.electronAPI && window.electronAPI.onUpdateAvailable) {
-  // Quando acha update (Windows — electron-updater), busca changelog e exibe modal
-  window.electronAPI.onUpdateAvailable(async (version) => {
-    let changelog = [];
-    try {
-      const res = await fetch(UPDATE_JSON_URL + '?t=' + Date.now());
-      const data = await res.json();
-      if (data.changelog && Array.isArray(data.changelog)) {
-        changelog = data.changelog;
-      }
-    } catch (e) {
-      console.error("Erro ao buscar changelog:", e);
-    }
-    const currentVersion = window.electronAPI.version || '2.1.0';
-    exibirModalUpdate(currentVersion, version, null, changelog);
-  });
-
-  // Quando termina de baixar (Windows), pede pra instalar
-  window.electronAPI.onUpdateDownloaded((version) => {
-    mostrarToast(`Atualização ${version} pronta para instalar!`, 'success');
-    atualizarNotificacaoParaInstalar(version);
-    document.getElementById('update-title').textContent = 'Atualização Pronta!';
-    document.getElementById('update-versao-nova').textContent = `v${version}`;
-
-    const btn = document.getElementById('btn-baixar-update');
-    btn.innerHTML = '<i data-lucide="refresh-cw" class="w-5 h-5"></i><span>Instalar e Reiniciar</span>';
-    btn.onclick = () => window.electronAPI.instalarAtualizacao();
-    lucide.createIcons({ nodes: [btn] });
-
-    if (!window.updateJaVisto) {
-      window.updateJaVisto = true;
-      document.getElementById('modal-update').classList.remove('hidden');
-      const card = document.getElementById('modal-update-card');
-      requestAnimationFrame(() => {
-        card.classList.remove('scale-95', 'opacity-0');
-        card.classList.add('scale-100', 'opacity-100');
-      });
-    }
-  });
-}
-
-// ---- macOS: update via GitHub API → abre .dmg no navegador ----
-if (window.electronAPI && window.electronAPI.onUpdateAvailableMac) {
-  window.electronAPI.onUpdateAvailableMac(async ({ version, url }) => {
-    let changelog = [];
-    try {
-      const res = await fetch(UPDATE_JSON_URL + '?t=' + Date.now());
-      const data = await res.json();
-      if (data.changelog && Array.isArray(data.changelog)) changelog = data.changelog;
-    } catch (e) { /* silencioso */ }
-
-    const currentVersion = window.electronAPI.version || '2.0.0';
-    // Passa a URL do .dmg como _urlDownloadAtual para o botão de download
-    exibirModalUpdate(currentVersion, version, url, changelog);
-  });
-}
-
-function adicionarNotificacaoDownload(versao) {
-  const badge = document.getElementById('badge-notificacao');
-  if (badge) badge.classList.remove('hidden');
-
-  const container = document.getElementById('lista-notificacoes');
-  const vazia = document.getElementById('notif-vazia');
-  if (vazia) vazia.style.display = 'none';
-
-  if (document.getElementById('notif-update-item')) return;
-
-  const item = document.createElement('div');
-  item.id = 'notif-update-item';
-  item.className = 'bg-white p-4 rounded-xl shadow-sm border border-emerald-100 flex gap-3 mb-3 relative overflow-hidden';
-  item.innerHTML = `
-    <div class="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500"></div>
-    <div class="bg-emerald-100 p-2 rounded-full h-fit text-emerald-600">
-      <i data-lucide="download" class="w-5 h-5 animate-bounce"></i>
-    </div>
-    <div class="flex-1">
-      <h4 class="text-sm font-bold text-slate-800">Baixando Atualização</h4>
-      <p class="text-xs text-slate-500 mt-1 mb-3">A versão ${versao} está sendo baixada em segundo plano.</p>
-      <button disabled class="w-full bg-slate-100 text-slate-400 text-xs font-bold py-2 px-3 rounded-lg flex items-center justify-center gap-2">
-        <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Aguarde...
-      </button>
-    </div>
-  `;
-  container.prepend(item);
-  lucide.createIcons({ nodes: [item] });
-}
-
-function atualizarNotificacaoParaInstalar(versao) {
-  const item = document.getElementById('notif-update-item');
-  if (!item) return;
-  item.innerHTML = `
-    <div class="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500"></div>
-    <div class="bg-emerald-100 p-2 rounded-full h-fit text-emerald-600">
-      <i data-lucide="rocket" class="w-5 h-5"></i>
-    </div>
-    <div class="flex-1">
-      <h4 class="text-sm font-bold text-slate-800">Atualização Pronta!</h4>
-      <p class="text-xs text-slate-500 mt-1 mb-3">A versão ${versao} foi baixada e está pronta para ser instalada.</p>
-      <button onclick="window.electronAPI.instalarAtualizacao()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5">
-        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Instalar e Reiniciar
-      </button>
-    </div>
-  `;
-  lucide.createIcons({ nodes: [item] });
-}
 
 window.abrirModalNotificacoes = () => {
   const modal = document.getElementById('modal-notificacoes');
@@ -1200,6 +1173,4 @@ window.fecharModalNotificacoes = () => {
   panel.classList.add('translate-x-full');
   setTimeout(() => modal.classList.add('hidden'), 300);
 };
-
-// Remover o timeout antigo (pois autoUpdater em main.js cuida disso)
 
