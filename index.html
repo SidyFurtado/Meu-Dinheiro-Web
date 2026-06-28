@@ -455,6 +455,27 @@
             </button>
           </div>
 
+          <!-- MODO ESCURO -->
+          <div class="pt-5 border-t border-slate-100">
+            <h4 class="text-sm font-bold text-slate-800 mb-1 flex items-center gap-2">
+              <i data-lucide="moon" class="w-4 h-4 text-emerald-500"></i> Modo Escuro
+            </h4>
+            <p class="text-xs text-slate-500 mb-4">Alterne entre o visual clássico claro ou o tema escuro mais confortável para a visão.</p>
+            <button type="button" onclick="toggleModoEscuro()"
+              class="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 hover:bg-slate-100 transition-colors">
+              <span class="text-sm font-semibold text-slate-700">Tema Escuro</span>
+              <div class="flex items-center gap-2">
+                <span id="toggle-modo-escuro-label" class="text-xs font-bold text-slate-500">Desativado</span>
+                <div id="toggle-modo-escuro"
+                  class="relative w-11 h-6 rounded-full bg-slate-300 transition-colors duration-300 cursor-pointer flex-shrink-0">
+                  <span
+                    class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300"
+                    style="transform: translateX(0px);"></span>
+                </div>
+              </div>
+            </button>
+          </div>
+
           <!-- SISTEMA DE BACKUP -->
           <div class="pt-5 border-t border-slate-100">
             <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">

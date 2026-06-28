@@ -108,8 +108,11 @@ service cloud.firestore {
         // sobraAutomatica: booleano opcional
         (!('sobraAutomatica' in d) || d.sobraAutomatica is bool) &&
 
+        // modoEscuro: booleano opcional
+        (!('modoEscuro' in d) || d.modoEscuro is bool) &&
+
         // Apenas campos permitidos
-        d.keys().hasOnly(['nome', 'telefone', 'foto', 'sobraAutomatica']);
+        d.keys().hasOnly(['nome', 'telefone', 'foto', 'sobraAutomatica', 'modoEscuro']);
     }
 
     // =========================================================

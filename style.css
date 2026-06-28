@@ -112,3 +112,115 @@ header {
 .modal-overlay * {
   -webkit-app-region: no-drag;
 }
+
+/* ============================================================
+   ESTILOS DO MODO NOTURNO (DARK MODE OVERRIDES)
+   ============================================================ */
+body.dark {
+  background-color: #0f172a !important; /* slate-900 */
+  color: #f8fafc !important; /* slate-50 */
+}
+
+/* Painéis e Cartões brancos ficam escuros */
+body.dark .bg-white {
+  background-color: #1e293b !important; /* slate-800 */
+  color: #f8fafc !important;
+}
+
+/* Elementos de layout cinza claro */
+body.dark .bg-slate-50 {
+  background-color: #0f172a !important; /* slate-900 */
+}
+
+body.dark .bg-slate-100 {
+  background-color: #334155 !important; /* slate-700 */
+}
+
+/* Textos */
+body.dark .text-slate-800,
+body.dark .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+body.dark .text-slate-700 {
+  color: #cbd5e1 !important; /* slate-300 */
+}
+
+body.dark .text-slate-600,
+body.dark .text-slate-500 {
+  color: #94a3b8 !important; /* slate-400 */
+}
+
+body.dark .text-slate-400 {
+  color: #64748b !important; /* slate-500 */
+}
+
+/* Divisores e Bordas */
+body.dark .border-slate-100,
+body.dark .border-slate-200,
+body.dark .border-slate-300 {
+  border-color: #334155 !important; /* slate-700 */
+}
+
+body.dark .divide-slate-100 > *,
+body.dark .divide-y > * {
+  border-color: #334155 !important;
+}
+
+/* Inputs, Selects e Textareas */
+body.dark input,
+body.dark select,
+body.dark textarea {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+body.dark input::placeholder {
+  color: #64748b !important;
+}
+
+/* Modais e Cabeçalhos de Modais */
+body.dark #modal-configuracoes .bg-white,
+body.dark #modal-cadastro .bg-white,
+body.dark #modal-perfil .bg-white,
+body.dark #modal-investimento .bg-white {
+  background-color: #1e293b !important;
+}
+
+/* Botões do Modal de Configuração (Exportar, Restaurar, etc) */
+body.dark .bg-emerald-50 {
+  background-color: #064e3b !important; /* emerald-900 */
+  color: #a7f3d0 !important; /* emerald-200 */
+}
+body.dark .bg-blue-50 {
+  background-color: #1e3a8a !important; /* blue-900 */
+  color: #bfdbfe !important; /* blue-200 */
+}
+
+/* Efeito Hover nas linhas do Histórico */
+body.dark .hover\:bg-slate-50:hover,
+body.dark .group:hover {
+  background-color: #334155 !important;
+}
+
+/* Cabeçalho principal */
+body.dark header,
+body.dark .bg-emerald-600 {
+  background-color: #064e3b !important; /* emerald-900 (tom elegante para o header) */
+}
+
+/* Cartão de Saldo do Mês (Destaques) */
+body.dark #cartao-saldo {
+  background-color: #1e293b !important;
+}
+body.dark #cartao-saldo[data-negativo="true"] {
+  background-color: #450a0a !important; /* vermelho bem escuro */
+}
+
+/* Ajustes nos inputs ocultos e arquivo */
+body.dark #toggle-sobra-auto:not(.bg-emerald-500),
+body.dark #toggle-modo-escuro:not(.bg-emerald-500) {
+  background-color: #475569 !important; /* slate-600 */
+}
+

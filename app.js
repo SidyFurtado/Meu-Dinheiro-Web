@@ -31,6 +31,7 @@ let idInvestimentoEmEdicao = null;
 
 // --- CONFIGURAÇÃO: SOBRA AUTOMÁTICA ---
 let sobraAutomaticaAtiva = JSON.parse(localStorage.getItem('sobraAutomatica') ?? 'true');
+let modoEscuroAtivo = JSON.parse(localStorage.getItem('modoEscuro') ?? 'false');
 
 const hoje = new Date();
 let dataVisualizacao = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
@@ -325,7 +326,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('login-container').classList.add('hidden');
     document.getElementById('app-container').classList.remove('hidden');
     
-    // Carregar perfil e sobra do Firestore
+    // Carregar perfil e configurações do Firestore
     try {
       const userDocRef = doc(db, "usuarios_app", user.uid);
       const userDocSnap = await getDoc(userDocRef);
@@ -337,6 +338,7 @@ onAuthStateChanged(auth, async (user) => {
           telefone: dadosUser.telefone || ''
         };
         sobraAutomaticaAtiva = dadosUser.sobraAutomatica !== false;
+        modoEscuroAtivo = dadosUser.modoEscuro === true;
       } else {
         // Criar perfil inicial
         meuPerfil = {
@@ -345,16 +347,23 @@ onAuthStateChanged(auth, async (user) => {
           telefone: ''
         };
         sobraAutomaticaAtiva = true;
-        await setDoc(userDocRef, { ...meuPerfil, sobraAutomatica: sobraAutomaticaAtiva });
+        modoEscuroAtivo = false;
+        await setDoc(userDocRef, { ...meuPerfil, sobraAutomatica: sobraAutomaticaAtiva, modoEscuro: modoEscuroAtivo });
       }
       
       // Salvar em cache local e atualizar a UI
       localStorage.setItem('meuPerfil', JSON.stringify(meuPerfil));
       localStorage.setItem('sobraAutomatica', JSON.stringify(sobraAutomaticaAtiva));
+      localStorage.setItem('modoEscuro', JSON.stringify(modoEscuroAtivo));
       atualizarDadosPerfilHeader();
       sincronizarToggleSobra();
+      sincronizarToggleModoEscuro();
+      aplicarTemaEscuro();
     } catch {
       // Falha silenciosa no sync de perfil — dados em cache local ainda válidos
+      sincronizarToggleSobra();
+      sincronizarToggleModoEscuro();
+      aplicarTemaEscuro();
     }
     
     carregarTransacoes();
@@ -363,6 +372,9 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('app-container').classList.add('hidden');
     transacoes = [];
     investimentos = [];
+    modoEscuroAtivo = false;
+    aplicarTemaEscuro();
+    sincronizarToggleModoEscuro();
   }
 });
 
@@ -498,6 +510,7 @@ window.fecharModalPerfil = () => { fecharModalGenerico('modal-perfil'); };
 
 window.abrirModalConfiguracoes = () => {
   sincronizarToggleSobra();
+  sincronizarToggleModoEscuro();
   abrirModalGenerico('modal-configuracoes');
 };
 
@@ -570,6 +583,57 @@ function sincronizarToggleSobra() {
   const label  = document.getElementById('toggle-sobra-label');
   if (!toggle) return;
   if (sobraAutomaticaAtiva) {
+    toggle.classList.add('bg-emerald-500');
+    toggle.classList.remove('bg-slate-300');
+    toggle.querySelector('span').style.transform = 'translateX(20px)';
+    if (label) label.textContent = 'Ativado';
+  } else {
+    toggle.classList.remove('bg-emerald-500');
+    toggle.classList.add('bg-slate-300');
+    toggle.querySelector('span').style.transform = 'translateX(0px)';
+    if (label) label.textContent = 'Desativado';
+  }
+}
+
+// --- CONFIGURAÇÃO: TEMA ESCURO (DARK MODE) ---
+function aplicarTemaEscuro() {
+  if (modoEscuroAtivo) {
+    document.body.classList.add('dark');
+    document.documentElement.classList.add('dark');
+  } else {
+    document.body.classList.remove('dark');
+    document.documentElement.classList.remove('dark');
+  }
+}
+
+window.toggleModoEscuro = async () => {
+  modoEscuroAtivo = !modoEscuroAtivo;
+  localStorage.setItem('modoEscuro', JSON.stringify(modoEscuroAtivo));
+  sincronizarToggleModoEscuro();
+  aplicarTemaEscuro();
+  
+  if (auth.currentUser) {
+    try {
+      const userDocRef = doc(db, "usuarios_app", auth.currentUser.uid);
+      await setDoc(userDocRef, { modoEscuro: modoEscuroAtivo }, { merge: true });
+    } catch {
+      // Falha silenciosa no Firestore
+    }
+  }
+  
+  mostrarToast(
+    modoEscuroAtivo
+      ? 'Modo escuro ativado! 🌙'
+      : 'Modo clássico (claro) ativado! ☀️',
+    modoEscuroAtivo ? 'success' : 'info'
+  );
+};
+
+function sincronizarToggleModoEscuro() {
+  const toggle = document.getElementById('toggle-modo-escuro');
+  const label  = document.getElementById('toggle-modo-escuro-label');
+  if (!toggle) return;
+  if (modoEscuroAtivo) {
     toggle.classList.add('bg-emerald-500');
     toggle.classList.remove('bg-slate-300');
     toggle.querySelector('span').style.transform = 'translateX(20px)';
@@ -1343,6 +1407,7 @@ window.processarImportacao = (event) => {
 
 // --- INICIALIZAÇÃO DA PÁGINA ---
 atualizarDadosPerfilHeader();
+aplicarTemaEscuro();
 renderIcons();
 
 // ==========================================
