@@ -1574,19 +1574,81 @@ window.processarImportacao = (event) => {
 // --- INICIALIZAÇÃO DA PÁGINA ---
 atualizarDadosPerfilHeader();
 aplicarTemaEscuro();
+inicializarNotificacoes();
 renderIcons();
 
 // ==========================================
 // SISTEMA DE NOTIFICAÇÕES (NATIVE IN-APP)
 // ==========================================
 
+function inicializarNotificacoes() {
+  const container = document.getElementById('lista-notificacoes');
+  const badge = document.getElementById('badge-notificacao');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col gap-3 transition-colors hover:shadow-md">
+      <div class="flex items-center gap-3">
+        <div class="p-3 rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+          <i data-lucide="sparkles" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight">Super Atualização! 🚀</h4>
+          <span class="text-xs text-slate-400">28 de Junho de 2026</span>
+        </div>
+      </div>
+      
+      <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mt-1">
+        Preparamos novidades incríveis para levar sua gestão financeira a outro nível:
+      </p>
+      
+      <ul class="text-xs text-slate-500 dark:text-slate-400 space-y-2 mt-1">
+        <li class="flex items-start gap-2">
+          <span class="text-emerald-500 font-bold mt-0.5">•</span>
+          <div>
+            <strong class="text-slate-700 dark:text-slate-300">📈 Fluxo de Caixa:</strong>
+            Visualize a previsão do seu saldo até o fim do mês ou trimestre com gráfico de linha interativo!
+          </div>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-emerald-500 font-bold mt-0.5">•</span>
+          <div>
+            <strong class="text-slate-700 dark:text-slate-300">⏳ Flag Pago/Pendente:</strong>
+            Marque contas como pendentes ou pagas. Contas não-pagas não afetam o saldo real até serem consolidadas!
+          </div>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-emerald-500 font-bold mt-0.5">•</span>
+          <div>
+            <strong class="text-slate-700 dark:text-slate-300">🌙 Modo Escuro Premium:</strong>
+            Ative o tema noturno sofisticado nas Configurações para maior conforto visual.
+          </div>
+        </li>
+      </ul>
+      
+      <button onclick="fecharModalNotificacoes(); abrirProjecaoFluxo();" 
+        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5 mt-2">
+        <i data-lucide="line-chart" class="w-3.5 h-3.5"></i> Testar Fluxo de Caixa
+      </button>
+    </div>
+  `;
+  
+  const jaLida = localStorage.getItem('notif_lida_v1') === 'true';
+  if (!jaLida && badge) {
+    badge.classList.remove('hidden');
+  }
+}
+
 window.abrirModalNotificacoes = () => {
   const modal = document.getElementById('modal-notificacoes');
   const panel = document.getElementById('notif-panel');
   modal.classList.remove('hidden');
-  // Força refluxo para animação funcionar
   void modal.offsetWidth;
   panel.classList.remove('translate-x-full');
+  
+  const badge = document.getElementById('badge-notificacao');
+  if (badge) badge.classList.add('hidden');
+  localStorage.setItem('notif_lida_v1', 'true');
 };
 
 window.fecharModalNotificacoes = () => {
