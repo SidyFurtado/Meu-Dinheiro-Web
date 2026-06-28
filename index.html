@@ -8,7 +8,7 @@
   <meta name="description"
     content="Organize suas finanças pessoais com facilidade. Controle receitas, despesas e acompanhe seus gastos por categoria.">
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; img-src 'self' data: blob: https://ui-avatars.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://apis.google.com; frame-src 'self' https://meu-dinheiro-6b1ab.firebaseapp.com; connect-src 'self' https://sidyfurtado.github.io https://fonts.googleapis.com https://fonts.gstatic.com wss://*.firebaseio.com https://*.googleapis.com https://*.firebaseio.com https://meu-dinheiro-6b1ab.firebaseapp.com https://apis.google.com https://accounts.google.com;">
+    content="default-src 'self'; img-src 'self' data: blob: https://ui-avatars.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com; frame-src 'self' https://meu-dinheiro-6b1ab.firebaseapp.com https://accounts.google.com; connect-src 'self' wss://*.firebaseio.com https://*.googleapis.com https://*.firebaseio.com https://meu-dinheiro-6b1ab.firebaseapp.com https://apis.google.com https://accounts.google.com https://securetoken.googleapis.com;">
 
   <!-- Tailwind CSS compilado (local, funciona offline) -->
   <link rel="stylesheet" href="tailwind-output.css">
@@ -36,11 +36,11 @@
       <form id="form-auth" class="space-y-5">
         <div>
           <label for="auth-email" class="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
-          <input type="email" id="auth-email" required placeholder="seu@email.com" class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800">
+          <input type="email" id="auth-email" required placeholder="seu@email.com" maxlength="254" autocomplete="email" class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800">
         </div>
         <div>
           <label for="auth-senha" class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
-          <input type="password" id="auth-senha" required placeholder="••••••••" class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800">
+          <input type="password" id="auth-senha" required placeholder="••••••••" maxlength="128" autocomplete="current-password" class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800">
         </div>
         
         <button type="submit" id="btn-auth-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-4 transition-colors shadow-md flex items-center justify-center gap-2">
@@ -320,7 +320,7 @@
           <div>
             <label for="form-desc" class="block text-sm font-medium text-slate-700 mb-1">O que foi isso?
               (Descrição)</label>
-            <input type="text" id="form-desc" required placeholder="Ex: Conta de Luz, Salário..."
+            <input type="text" id="form-desc" required placeholder="Ex: Conta de Luz, Salário..." maxlength="300" autocomplete="off"
               class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800" />
           </div>
 
@@ -340,7 +340,7 @@
                 class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
                 <!-- Preenchido via JS -->
               </select>
-              <input type="text" id="form-categoria-outros" placeholder="Digite a categoria"
+              <input type="text" id="form-categoria-outros" placeholder="Digite a categoria" maxlength="100" autocomplete="off"
                 class="w-full border-slate-200 border rounded-xl px-4 py-3 mt-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800 hidden" />
             </div>
             <div>
@@ -392,14 +392,14 @@
 
           <div>
             <label for="perfil-nome" class="block text-sm font-medium text-slate-700 mb-1">Seu Nome</label>
-            <input type="text" id="perfil-nome" placeholder="Como quer ser chamado?"
+            <input type="text" id="perfil-nome" placeholder="Como quer ser chamado?" maxlength="100" autocomplete="name"
               class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800">
           </div>
 
           <div>
             <label for="perfil-telefone" class="block text-sm font-medium text-slate-700 mb-1">Telefone /
               Celular</label>
-            <input type="tel" id="perfil-telefone" placeholder="(00) 00000-0000"
+            <input type="tel" id="perfil-telefone" placeholder="(00) 00000-0000" maxlength="30" autocomplete="tel"
               class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800">
           </div>
 
@@ -511,7 +511,7 @@
           <div>
             <label for="inv-desc" class="block text-sm font-medium text-slate-700 mb-1">Descrição do
               Investimento</label>
-            <input type="text" id="inv-desc" required placeholder="Ex: Aporte Tesouro Selic, Compra PETR4..."
+            <input type="text" id="inv-desc" required placeholder="Ex: Aporte Tesouro Selic, Compra PETR4..." maxlength="300" autocomplete="off"
               class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-800" />
           </div>
 
@@ -536,7 +536,7 @@
                 <option value="Previdência Privada">Previdência Privada</option>
                 <option value="Outros">Outros</option>
               </select>
-              <input type="text" id="inv-categoria-outros" placeholder="Digite o tipo"
+              <input type="text" id="inv-categoria-outros" placeholder="Digite o tipo" maxlength="100" autocomplete="off"
                 class="w-full border-slate-200 border rounded-xl px-4 py-3 mt-2 focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white text-slate-800 hidden" />
             </div>
             <div>
@@ -588,8 +588,10 @@
   </div>
 
 
-  <!-- Lucide Icons (CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <!-- Lucide Icons (CDN com SRI — Subresource Integrity) -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"
+    integrity="sha384-ieG+IKD0d/ZPXyCBTMVAbqsQdns8QGJR/e26WMw7M4fkaI/rHcS/YIoi+ah9WGge"
+    crossorigin="anonymous"></script>
 
   <!-- Importmap para o Firebase -->
   <script type="importmap">

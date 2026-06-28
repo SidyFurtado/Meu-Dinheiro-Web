@@ -5,3 +5,17 @@ releases/
 dist/
 main.js
 preload.js
+
+# Logs e arquivos de debug — NUNCA commitar
+firebase-debug.log
+firestore-debug.log
+*.log
+
+# Arquivos de teste expostos
+test-*.js
+
+# Arquivo temporário de download grande
+download.html
+
+# Arquivos de task/planejamento interno
+task.md

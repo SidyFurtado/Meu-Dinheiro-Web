@@ -73,6 +73,83 @@ function calcularResumo(lista) {
   return { entradas, saidas, saldo: entradas - saidas, gastosPorCategoria, arrayCategorias };
 }
 
+const FALLBACK_ICON_PATHS = {
+  'alert-circle': '<circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line>',
+  'arrow-down-circle': '<circle cx="12" cy="12" r="10"></circle><path d="M8 12l4 4 4-4"></path><path d="M12 8v8"></path>',
+  'arrow-left': '<path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path>',
+  'arrow-up-circle': '<circle cx="12" cy="12" r="10"></circle><path d="M8 12l4-4 4 4"></path><path d="M12 16V8"></path>',
+  'bar-chart-2': '<path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path>',
+  'bar-chart-3': '<path d="M3 3v18h18"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path>',
+  'bell': '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path>',
+  'bell-off': '<path d="M13.73 21a2 2 0 0 1-3.46 0"></path><path d="M18.63 13A17.9 17.9 0 0 1 18 8"></path><path d="M6.26 6.26A6 6 0 0 0 6 8c0 7-3 7-3 9h14"></path><path d="M2 2l20 20"></path>',
+  'briefcase': '<rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"></path><path d="M2 13h20"></path>',
+  'calendar': '<rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path>',
+  'camera': '<path d="M14.5 4l1.5 2H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l1.5-2z"></path><circle cx="12" cy="13" r="4"></circle>',
+  'check-circle': '<circle cx="12" cy="12" r="10"></circle><path d="M9 12l2 2 4-4"></path>',
+  'chevron-down': '<path d="M6 9l6 6 6-6"></path>',
+  'chevron-left': '<path d="M15 18l-6-6 6-6"></path>',
+  'chevron-right': '<path d="M9 18l6-6-6-6"></path>',
+  'download-cloud': '<path d="M12 13v8"></path><path d="M8 17l4 4 4-4"></path><path d="M20.4 15.5A5 5 0 0 0 18 6h-1.3A8 8 0 1 0 4 14.9"></path>',
+  'folder': '<path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>',
+  'folder-open': '<path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"></path><path d="M3 19l3-8h16l-3 8z"></path>',
+  'folder-search': '<path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v3"></path><path d="M3 19l3-8h9"></path><circle cx="17" cy="17" r="3"></circle><path d="M19.5 19.5L22 22"></path>',
+  'folder-x': '<path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M10 11l4 4"></path><path d="M14 11l-4 4"></path>',
+  'info': '<circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path>',
+  'list': '<path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path>',
+  'loader-2': '<path d="M21 12a9 9 0 1 1-6.2-8.6"></path>',
+  'log-in': '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><path d="M10 17l5-5-5-5"></path><path d="M15 12H3"></path>',
+  'log-out': '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5"></path><path d="M21 12H9"></path>',
+  'pencil': '<path d="M18 2l4 4L8 20H4v-4z"></path><path d="M14 6l4 4"></path>',
+  'pie-chart': '<path d="M21 12a9 9 0 1 1-9-9v9z"></path><path d="M12 3a9 9 0 0 1 9 9h-9z"></path>',
+  'plus': '<path d="M12 5v14"></path><path d="M5 12h14"></path>',
+  'refresh-cw': '<path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"></path><path d="M3 16h6"></path><path d="M3 16v6"></path><path d="M3 12A9 9 0 0 1 18.5 5.7L21 8"></path><path d="M21 8h-6"></path><path d="M21 8V2"></path>',
+  'save': '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path>',
+  'settings': '<circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 1 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.3 7A2 2 0 1 1 7.1 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 1 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1a2 2 0 1 1 0 4H21a1.7 1.7 0 0 0-1.6 1z"></path>',
+  'shield-check': '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path>',
+  'tag': '<path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"></path><path d="M7.5 7.5h.01"></path>',
+  'trash-2': '<path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path>',
+  'trending-up': '<path d="M3 17l6-6 4 4 8-8"></path><path d="M14 7h7v7"></path>',
+  'upload-cloud': '<path d="M12 21v-8"></path><path d="M8 17l4-4 4 4"></path><path d="M20.4 15.5A5 5 0 0 0 18 6h-1.3A8 8 0 1 0 4 14.9"></path>',
+  'user-cog': '<circle cx="10" cy="7" r="4"></circle><path d="M2 21a8 8 0 0 1 12-7"></path><circle cx="18" cy="18" r="3"></circle><path d="M18 13v2"></path><path d="M18 21v2"></path><path d="M13 18h2"></path><path d="M21 18h2"></path>',
+  'wallet': '<path d="M20 12v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2"></path><path d="M16 12h6v5h-6a2.5 2.5 0 0 1 0-5z"></path>',
+  'x': '<path d="M18 6L6 18"></path><path d="M6 6l12 12"></path>',
+};
+
+function renderFallbackIcons(root = document) {
+  const scope = root && root.querySelectorAll ? root : document;
+  const icons = [
+    ...(scope.matches?.('i[data-lucide]') ? [scope] : []),
+    ...scope.querySelectorAll('i[data-lucide]'),
+  ];
+
+  icons.forEach(icon => {
+    const name = icon.getAttribute('data-lucide');
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('data-fallback-lucide', name || '');
+    svg.setAttribute('class', icon.getAttribute('class') || '');
+    svg.innerHTML = FALLBACK_ICON_PATHS[name] || FALLBACK_ICON_PATHS.info;
+    icon.replaceWith(svg);
+  });
+}
+
+function renderIcons(root = document) {
+  if (window.lucide?.createIcons) {
+    if (root === document) window.lucide.createIcons();
+    else window.lucide.createIcons({ nodes: [root] });
+    return;
+  }
+
+  renderFallbackIcons(root);
+}
+
 /** Redimensiona imagem para max 200x200 antes de salvar */
 function redimensionarImagem(base64, maxSize, callback) {
   const img = new Image();
@@ -146,7 +223,7 @@ function mostrarToast(mensagem, tipo = 'success') {
   toast.innerHTML = `<i data-lucide="${icone}" class="w-6 h-6 shrink-0"></i><span class="font-medium">${escaparHTML(mensagem)}</span>`;
 
   container.appendChild(toast);
-  lucide.createIcons({ nodes: [toast] });
+  renderIcons();
 
   setTimeout(() => {
     toast.classList.remove('toast-enter');
@@ -157,6 +234,7 @@ function mostrarToast(mensagem, tipo = 'success') {
 
 // --- AUTENTICAÇÃO ---
 let modoAuth = 'login';
+let _authCooldown = false; // Rate limiting simples entre tentativas de login
 
 window.alternarModoAuth = () => {
   modoAuth = modoAuth === 'login' ? 'cadastro' : 'login';
@@ -167,13 +245,35 @@ window.alternarModoAuth = () => {
 
 document.getElementById('form-auth').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const email = document.getElementById('auth-email').value;
+
+  // Rate limiting: bloqueia nova tentativa por 2 segundos
+  if (_authCooldown) {
+    mostrarToast('Aguarde um momento antes de tentar novamente.', 'error');
+    return;
+  }
+
+  const email = document.getElementById('auth-email').value.trim();
   const senha = document.getElementById('auth-senha').value;
   const btn = document.getElementById('btn-auth-submit');
   const txtOriginal = btn.innerHTML;
+
+  // Validação básica no cliente (defesa em profundidade)
+  if (!email || email.length > 254) {
+    mostrarToast('E-mail inválido.', 'error');
+    return;
+  }
+  if (!senha || senha.length < 6 || senha.length > 128) {
+    mostrarToast('A senha deve ter entre 6 e 128 caracteres.', 'error');
+    return;
+  }
+
   btn.disabled = true;
   btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Aguarde...';
-  lucide.createIcons({ nodes: [btn] });
+  renderIcons();
+
+  // Ativa cooldown de 2s
+  _authCooldown = true;
+  setTimeout(() => { _authCooldown = false; }, 2000);
 
   try {
     if (modoAuth === 'login') {
@@ -182,15 +282,18 @@ document.getElementById('form-auth').addEventListener('submit', async (e) => {
       await createUserWithEmailAndPassword(auth, email, senha);
     }
   } catch (error) {
-    let msg = "Erro na autenticação.";
-    if (error.code === 'auth/invalid-credential') msg = "E-mail ou senha incorretos.";
-    if (error.code === 'auth/email-already-in-use') msg = "E-mail já está em uso.";
-    if (error.code === 'auth/weak-password') msg = "A senha deve ter pelo menos 6 caracteres.";
-    mostrarToast(msg, "error");
+    // Mensagens genéricas — não vazam detalhes de implementação
+    let msg = 'E-mail ou senha incorretos.';
+    if (error.code === 'auth/email-already-in-use') msg = 'Este e-mail já possui uma conta.';
+    if (error.code === 'auth/weak-password') msg = 'A senha deve ter pelo menos 6 caracteres.';
+    if (error.code === 'auth/invalid-email') msg = 'Formato de e-mail inválido.';
+    if (error.code === 'auth/too-many-requests') msg = 'Muitas tentativas. Aguarde alguns minutos.';
+    if (error.code === 'auth/network-request-failed') msg = 'Falha de rede. Verifique sua conexão.';
+    mostrarToast(msg, 'error');
   } finally {
     btn.disabled = false;
     btn.innerHTML = txtOriginal;
-    lucide.createIcons({ nodes: [btn] });
+    renderIcons();
   }
 });
 
@@ -210,9 +313,9 @@ window.fazerLoginGoogle = async () => {
   try {
     await signInWithPopup(auth, provider);
   } catch (error) {
-    if (error.code === 'auth/popup-closed-by-user') return;
-    console.error("Erro no login com Google:", error);
-    mostrarToast("Erro no Google: " + error.message, "error");
+    if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') return;
+    // Mensagem genérica — não expõe error.message do Firebase
+    mostrarToast('Erro ao entrar com Google. Tente novamente.', 'error');
   }
 };
 
@@ -250,8 +353,8 @@ onAuthStateChanged(auth, async (user) => {
       localStorage.setItem('sobraAutomatica', JSON.stringify(sobraAutomaticaAtiva));
       atualizarDadosPerfilHeader();
       sincronizarToggleSobra();
-    } catch (error) {
-      console.error("Erro ao sincronizar perfil do Firestore:", error);
+    } catch {
+      // Falha silenciosa no sync de perfil — dados em cache local ainda válidos
     }
     
     carregarTransacoes();
@@ -283,9 +386,8 @@ async function carregarTransacoes() {
 
     ordenarTransacoes();
     atualizarTela();
-  } catch (error) {
-    console.error("Erro ao carregar dados do Firebase:", error);
-    mostrarToast("Erro ao carregar dados da nuvem.", "error");
+  } catch {
+    mostrarToast('Erro ao carregar dados da nuvem. Tente novamente.', 'error');
   }
 }
 
@@ -346,18 +448,27 @@ window.pedirConfirmacaoDelete = (id) => {
       <button onclick="cancelarDelete('${id}')" class="bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-bold hover:bg-slate-300 transition-colors text-xs">Não</button>
     </div>
   `;
-  lucide.createIcons({ nodes: [container] });
+  renderIcons();
 };
 
 window.confirmarDelete = async (id) => {
+  // Verificação de autenticação antes de qualquer operação destrutiva
+  if (!auth.currentUser) {
+    mostrarToast('Sessão expirada. Faça login novamente.', 'error');
+    return;
+  }
+  // Valida que o ID é uma string simples (previne path traversal)
+  if (typeof id !== 'string' || id.length > 128 || !/^[a-zA-Z0-9_-]+$/.test(id)) {
+    mostrarToast('Erro: ID inválido.', 'error');
+    return;
+  }
   try {
-    await deleteDoc(doc(db, "transacoes_app", id));
+    await deleteDoc(doc(db, 'transacoes_app', id));
     transacoes = transacoes.filter(t => t.id !== id);
-    mostrarToast("Conta apagada.", "success");
+    mostrarToast('Conta apagada.', 'success');
     atualizarTela();
   } catch (error) {
-    console.error("Erro ao deletar transação:", error);
-    mostrarToast("Erro ao apagar conta.", "error");
+    mostrarToast('Erro ao apagar conta. Tente novamente.', 'error');
   }
 };
 
@@ -421,9 +532,8 @@ document.getElementById('form-perfil').addEventListener('submit', async (e) => {
     try {
       const userDocRef = doc(db, "usuarios_app", auth.currentUser.uid);
       await setDoc(userDocRef, { ...meuPerfil, sobraAutomatica: sobraAutomaticaAtiva }, { merge: true });
-    } catch (error) {
-      console.error("Erro ao salvar perfil no Firestore:", error);
-      mostrarToast("Erro ao sincronizar com nuvem, salvo apenas localmente.", "error");
+    } catch {
+      mostrarToast('Erro ao sincronizar com nuvem, salvo apenas localmente.', 'error');
     }
   }
   
@@ -442,8 +552,8 @@ window.toggleSobraAutomatica = async () => {
     try {
       const userDocRef = doc(db, "usuarios_app", auth.currentUser.uid);
       await setDoc(userDocRef, { sobraAutomatica: sobraAutomaticaAtiva }, { merge: true });
-    } catch (error) {
-      console.error("Erro ao salvar configuração de sobra no Firestore:", error);
+    } catch {
+      // Falha silenciosa — configuração local já foi aplicada
     }
   }
   
@@ -489,22 +599,30 @@ document.getElementById('form-transacao').addEventListener('submit', async (e) =
   const btnContent = btnSalvar.innerHTML;
   btnSalvar.disabled = true;
   btnSalvar.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Salvando...';
-  lucide.createIcons({ nodes: [btnSalvar] });
+  renderIcons();
 
   try {
     if (idTransacaoEmEdicao) {
       const index = transacoes.findIndex(t => t.id === idTransacaoEmEdicao);
       if (index !== -1) {
-        const payload = { type: tipo, description: descricao, amount: valor, category: categoria, date: data, uid: auth.currentUser.uid };
-        await updateDoc(doc(db, "transacoes_app", idTransacaoEmEdicao), payload);
+        // Sanitiza comprimento antes de enviar ao Firestore
+        const descSanitizada = descricao.trim().slice(0, 300);
+        const catSanitizada = categoria.trim().slice(0, 100);
+        if (!descSanitizada) { mostrarToast('Descrição inválida.', 'error'); return; }
+        const payload = { type: tipo, description: descSanitizada, amount: valor, category: catSanitizada, date: data, uid: auth.currentUser.uid };
+        await updateDoc(doc(db, 'transacoes_app', idTransacaoEmEdicao), payload);
         transacoes[index] = { id: idTransacaoEmEdicao, ...payload };
-        mostrarToast("Conta atualizada com sucesso!");
+        mostrarToast('Conta atualizada com sucesso!');
       }
     } else {
-      const payload = { type: tipo, description: descricao, amount: valor, category: categoria, date: data, uid: auth.currentUser.uid };
-      const docRef = await addDoc(collection(db, "transacoes_app"), payload);
+      // Sanitiza comprimento antes de enviar ao Firestore
+      const descSanitizada = descricao.trim().slice(0, 300);
+      const catSanitizada = categoria.trim().slice(0, 100);
+      if (!descSanitizada) { mostrarToast('Descrição inválida.', 'error'); return; }
+      const payload = { type: tipo, description: descSanitizada, amount: valor, category: catSanitizada, date: data, uid: auth.currentUser.uid };
+      const docRef = await addDoc(collection(db, 'transacoes_app'), payload);
       transacoes.push({ id: docRef.id, ...payload });
-      mostrarToast("Conta adicionada com sucesso!");
+      mostrarToast('Conta adicionada com sucesso!');
     }
 
     const [anoStr, mesStr] = data.split('-');
@@ -515,12 +633,11 @@ document.getElementById('form-transacao').addEventListener('submit', async (e) =
     atualizarTela();
     fecharModal();
   } catch (error) {
-    console.error("Erro ao salvar transação:", error);
-    mostrarToast("Erro ao salvar na nuvem.", "error");
+    mostrarToast('Erro ao salvar na nuvem. Tente novamente.', 'error');
   } finally {
     btnSalvar.disabled = false;
     btnSalvar.innerHTML = btnContent;
-    lucide.createIcons({ nodes: [btnSalvar] });
+    renderIcons();
   }
 });
 
@@ -564,7 +681,7 @@ window.abrirModal = (tipo) => {
   }
 
   abrirModalGenerico('modal-cadastro');
-  lucide.createIcons({ nodes: [document.getElementById('modal-cadastro')] });
+  renderIcons();
 };
 
 window.abrirModalEdicao = (id) => {
@@ -593,7 +710,7 @@ window.abrirModalEdicao = (id) => {
   document.getElementById('modal-title').innerText = 'Editar Conta';
   document.getElementById('btn-salvar').innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> Salvar Alterações';
   abrirModalGenerico('modal-cadastro');
-  lucide.createIcons({ nodes: [document.getElementById('modal-cadastro')] });
+  renderIcons();
 };
 
 window.fecharModal = () => { fecharModalGenerico('modal-cadastro'); idTransacaoEmEdicao = null; };
@@ -650,7 +767,7 @@ window.abrirModalInvestimento = (idEditar) => {
   }
 
   abrirModalGenerico('modal-investimento');
-  lucide.createIcons({ nodes: [document.getElementById('modal-investimento')] });
+  renderIcons();
 };
 
 window.fecharModalInvestimento = () => { fecharModalGenerico('modal-investimento'); idInvestimentoEmEdicao = null; };
@@ -670,7 +787,7 @@ document.getElementById('form-investimento').addEventListener('submit', async (e
   const btnContent = btnSalvar.innerHTML;
   btnSalvar.disabled = true;
   btnSalvar.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Salvando...';
-  lucide.createIcons({ nodes: [btnSalvar] });
+  renderIcons();
 
   try {
     if (idInvestimentoEmEdicao) {
@@ -695,13 +812,12 @@ document.getElementById('form-investimento').addEventListener('submit', async (e
     ordenarTransacoes();
     atualizarTela();
     fecharModalInvestimento();
-  } catch (error) {
-    console.error("Erro ao salvar investimento:", error);
-    mostrarToast("Erro ao salvar na nuvem.", "error");
+  } catch {
+    mostrarToast('Erro ao salvar na nuvem. Tente novamente.', 'error');
   } finally {
     btnSalvar.disabled = false;
     btnSalvar.innerHTML = btnContent;
-    lucide.createIcons({ nodes: [btnSalvar] });
+    renderIcons();
   }
 });
 
@@ -715,18 +831,27 @@ window.pedirConfirmacaoDeleteInv = (id) => {
       <button onclick="cancelarDeleteInv('${id}')" class="bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-bold hover:bg-slate-300 transition-colors text-xs">Não</button>
     </div>
   `;
-  lucide.createIcons({ nodes: [container] });
+  renderIcons();
 };
 
 window.confirmarDeleteInv = async (id) => {
+  // Verificação de autenticação antes de qualquer operação destrutiva
+  if (!auth.currentUser) {
+    mostrarToast('Sessão expirada. Faça login novamente.', 'error');
+    return;
+  }
+  // Valida que o ID é uma string simples
+  if (typeof id !== 'string' || id.length > 128 || !/^[a-zA-Z0-9_-]+$/.test(id)) {
+    mostrarToast('Erro: ID inválido.', 'error');
+    return;
+  }
   try {
-    await deleteDoc(doc(db, "investimentos_app", id));
+    await deleteDoc(doc(db, 'investimentos_app', id));
     investimentos = investimentos.filter(i => i.id !== id);
     mostrarToast('Investimento apagado.', 'success');
     atualizarTela();
   } catch (error) {
-    console.error("Erro ao deletar investimento:", error);
-    mostrarToast("Erro ao apagar investimento.", "error");
+    mostrarToast('Erro ao apagar investimento. Tente novamente.', 'error');
   }
 };
 
@@ -906,7 +1031,7 @@ function atualizarTela() {
     `).join('');
   }
 
-  lucide.createIcons({ nodes: [document.getElementById('app-container')] });
+  renderIcons();
 }
 
 // --- SISTEMA DE HISTÓRICO E RELATÓRIOS ---
@@ -976,7 +1101,7 @@ window.abrirHistorico = () => {
   }
 
   abrirModalGenerico('modal-historico');
-  lucide.createIcons({ nodes: [document.getElementById('modal-historico')] });
+  renderIcons();
 };
 
 window.toggleAnoHistorico = (ano) => {
@@ -1082,7 +1207,7 @@ window.gerarRelatorio = (anoStr, mes) => {
   viewRelatorio.classList.add('flex');
   // Garante que o conteúdo do relatório sempre começa do topo
   if (viewRelatorio.parentElement) viewRelatorio.parentElement.scrollTop = 0;
-  lucide.createIcons({ nodes: [viewRelatorio] });
+  renderIcons();
 };
 
 window.voltarParaPastas = () => {
@@ -1113,46 +1238,112 @@ window.acionarImportacao = () => { document.getElementById('input-importar').cli
 window.processarImportacao = (event) => {
   const file = event.target.files[0];
   if (!file) return;
+
+  // Limite de tamanho de arquivo: 5MB
+  if (file.size > 5 * 1024 * 1024) {
+    mostrarToast('Arquivo muito grande. Limite: 5MB.', 'error');
+    event.target.value = '';
+    return;
+  }
+
   const reader = new FileReader();
   reader.onload = function (e) {
     try {
       const dados = JSON.parse(e.target.result);
-      if (!dados.transacoes_app || !Array.isArray(dados.transacoes_app)) throw new Error("Formato inválido.");
 
-      // Valida que cada transação tem campos obrigatórios
-      const camposObrigatorios = ['id', 'type', 'description', 'amount', 'date', 'category'];
+      // Valida estrutura mínima
+      if (!dados.transacoes_app || !Array.isArray(dados.transacoes_app)) {
+        throw new Error('Formato inválido: campo transacoes_app ausente.');
+      }
+      if (dados.transacoes_app.length > 10000) {
+        throw new Error('Backup muito grande. Máximo de 10.000 transações.');
+      }
+
+      // Valida e sanitiza cada transação
+      const TIPOS_VALIDOS = ['income', 'expense'];
       dados.transacoes_app.forEach((t, i) => {
-        camposObrigatorios.forEach(campo => {
-          if (t[campo] === undefined || t[campo] === null) throw new Error(`Transação ${i + 1} sem campo "${campo}".`);
-        });
+        const n = i + 1;
+        if (typeof t.id !== 'string' || t.id.length === 0 || t.id.length > 128)
+          throw new Error(`Transação ${n}: campo "id" inválido.`);
+        if (!TIPOS_VALIDOS.includes(t.type))
+          throw new Error(`Transação ${n}: "type" deve ser "income" ou "expense".`);
+        if (typeof t.description !== 'string' || t.description.length === 0 || t.description.length > 300)
+          throw new Error(`Transação ${n}: "description" inválida (máx 300 chars).`);
+        if (typeof t.amount !== 'number' || t.amount <= 0 || t.amount > 10000000)
+          throw new Error(`Transação ${n}: "amount" deve ser um número positivo (máx 10.000.000).`);
+        if (typeof t.category !== 'string' || t.category.length === 0 || t.category.length > 100)
+          throw new Error(`Transação ${n}: "category" inválida (máx 100 chars).`);
+        if (typeof t.date !== 'string' || t.date.length !== 10 || !/^\d{4}-\d{2}-\d{2}$/.test(t.date))
+          throw new Error(`Transação ${n}: "date" inválida. Use formato YYYY-MM-DD.`);
       });
 
+      // Valida investimentos (se presentes)
+      if (dados.investimentos_app !== undefined) {
+        if (!Array.isArray(dados.investimentos_app)) {
+          throw new Error('Campo investimentos_app inválido.');
+        }
+        if (dados.investimentos_app.length > 5000) {
+          throw new Error('Backup muito grande. Máximo de 5.000 investimentos.');
+        }
+        dados.investimentos_app.forEach((inv, i) => {
+          const n = i + 1;
+          if (typeof inv.id !== 'string' || inv.id.length === 0 || inv.id.length > 128)
+            throw new Error(`Investimento ${n}: campo "id" inválido.`);
+          if (typeof inv.description !== 'string' || inv.description.length === 0 || inv.description.length > 300)
+            throw new Error(`Investimento ${n}: "description" inválida (máx 300 chars).`);
+          if (typeof inv.amount !== 'number' || inv.amount <= 0 || inv.amount > 10000000)
+            throw new Error(`Investimento ${n}: "amount" deve ser número positivo (máx 10.000.000).`);
+          if (typeof inv.category !== 'string' || inv.category.length === 0 || inv.category.length > 100)
+            throw new Error(`Investimento ${n}: "category" inválida (máx 100 chars).`);
+          if (typeof inv.date !== 'string' || inv.date.length !== 10 || !/^\d{4}-\d{2}-\d{2}$/.test(inv.date))
+            throw new Error(`Investimento ${n}: "date" inválida. Use formato YYYY-MM-DD.`);
+        });
+      }
+
+      // Valida perfil (se presente)
+      if (dados.meuPerfil !== undefined) {
+        const p = dados.meuPerfil;
+        if (typeof p !== 'object' || p === null) throw new Error('Campo meuPerfil inválido.');
+        if (p.nome !== undefined && (typeof p.nome !== 'string' || p.nome.length > 100))
+          throw new Error('meuPerfil.nome inválido (máx 100 chars).');
+        if (p.telefone !== undefined && (typeof p.telefone !== 'string' || p.telefone.length > 30))
+          throw new Error('meuPerfil.telefone inválido (máx 30 chars).');
+      }
+
+      // Só chega aqui se todos os dados são válidos
       localStorage.setItem('transacoes_app', JSON.stringify(dados.transacoes_app));
 
-      // Restaura investimentos se existirem no backup
       if (dados.investimentos_app && Array.isArray(dados.investimentos_app)) {
         localStorage.setItem('investimentos_app', JSON.stringify(dados.investimentos_app));
       }
 
       if (dados.meuPerfil) {
-        localStorage.setItem('meuPerfil', JSON.stringify(dados.meuPerfil));
-        meuPerfil = dados.meuPerfil;
+        // Sanitiza antes de salvar — apenas campos permitidos
+        const perfilSanitizado = {
+          nome: (dados.meuPerfil.nome || '').slice(0, 100),
+          telefone: (dados.meuPerfil.telefone || '').slice(0, 30),
+          foto: dados.meuPerfil.foto || null
+        };
+        localStorage.setItem('meuPerfil', JSON.stringify(perfilSanitizado));
+        meuPerfil = perfilSanitizado;
       }
+
       fecharModalConfiguracoes();
-      mostrarToast("Backup restaurado!");
+      mostrarToast('Backup restaurado com sucesso!');
       carregarTransacoes();
       atualizarDadosPerfilHeader();
     } catch (erro) {
-      mostrarToast("Erro ao restaurar: " + erro.message, "error");
+      // Mensagem de erro da validação interna é segura de exibir
+      mostrarToast('Erro ao restaurar: ' + erro.message, 'error');
     }
   };
-  reader.readAsText(file);
+  reader.readAsText(file, 'UTF-8');
   event.target.value = '';
 };
 
 // --- INICIALIZAÇÃO DA PÁGINA ---
 atualizarDadosPerfilHeader();
-lucide.createIcons();
+renderIcons();
 
 // ==========================================
 // SISTEMA DE NOTIFICAÇÕES (NATIVE IN-APP)
@@ -1173,4 +1364,3 @@ window.fecharModalNotificacoes = () => {
   panel.classList.add('translate-x-full');
   setTimeout(() => modal.classList.add('hidden'), 300);
 };
-

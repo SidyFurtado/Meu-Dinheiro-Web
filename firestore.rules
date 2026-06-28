@@ -2,23 +2,177 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Regras para transações
+    // =========================================================
+    // FUNÇÕES AUXILIARES DE VALIDAÇÃO
+    // =========================================================
+
+    // Verifica se o usuário está autenticado
+    function isAuthenticated() {
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    // Valida campos de uma transação (criação)
+    function isValidTransacao() {
+      let d = request.resource.data;
+      return
+        // UID obrigatório e pertence ao solicitante
+        d.uid is string &&
+        d.uid == request.auth.uid &&
+
+        // Tipo: apenas 'income' ou 'expense'
+        d.type is string &&
+        d.type in ['income', 'expense'] &&
+
+        // Descrição: string, não vazia, máximo 300 chars
+        d.description is string &&
+        d.description.size() > 0 &&
+        d.description.size() <= 300 &&
+
+        // Valor: número positivo, máximo razoável (R$ 10 milhões)
+        d.amount is number &&
+        d.amount > 0 &&
+        d.amount <= 10000000 &&
+
+        // Categoria: string, não vazia, máximo 100 chars
+        d.category is string &&
+        d.category.size() > 0 &&
+        d.category.size() <= 100 &&
+
+        // Data: string no formato YYYY-MM-DD (10 chars)
+        d.date is string &&
+        d.date.size() == 10 &&
+
+        // Nenhum campo extra permitido (previne injeção de dados)
+        d.keys().hasOnly(['uid', 'type', 'description', 'amount', 'category', 'date']);
+    }
+
+    // Valida campos de uma transação (atualização)
+    function isValidTransacaoUpdate() {
+      let d = request.resource.data;
+      return
+        isValidTransacao() &&
+        // UID NÃO pode mudar — imutável após criação
+        d.uid == resource.data.uid;
+    }
+
+    // Valida campos de um investimento (criação)
+    function isValidInvestimento() {
+      let d = request.resource.data;
+      return
+        d.uid is string &&
+        d.uid == request.auth.uid &&
+
+        d.description is string &&
+        d.description.size() > 0 &&
+        d.description.size() <= 300 &&
+
+        d.amount is number &&
+        d.amount > 0 &&
+        d.amount <= 10000000 &&
+
+        d.category is string &&
+        d.category.size() > 0 &&
+        d.category.size() <= 100 &&
+
+        d.date is string &&
+        d.date.size() == 10 &&
+
+        d.keys().hasOnly(['uid', 'description', 'amount', 'category', 'date']);
+    }
+
+    // Valida campos de um investimento (atualização)
+    function isValidInvestimentoUpdate() {
+      let d = request.resource.data;
+      return
+        isValidInvestimento() &&
+        // UID NÃO pode mudar
+        d.uid == resource.data.uid;
+    }
+
+    // Valida perfil do usuário
+    function isValidPerfil(userId) {
+      let d = request.resource.data;
+      return
+        // Garante que está atualizando o próprio perfil
+        request.auth.uid == userId &&
+
+        // Nome: string opcional, máximo 100 chars
+        (!('nome' in d) || (d.nome is string && d.nome.size() <= 100)) &&
+
+        // Telefone: string opcional, máximo 30 chars
+        (!('telefone' in d) || (d.telefone is string && d.telefone.size() <= 30)) &&
+
+        // Foto: string opcional (base64), máximo 100KB (~136KB base64)
+        (!('foto' in d) || d.foto == null || (d.foto is string && d.foto.size() <= 140000)) &&
+
+        // sobraAutomatica: booleano opcional
+        (!('sobraAutomatica' in d) || d.sobraAutomatica is bool) &&
+
+        // Apenas campos permitidos
+        d.keys().hasOnly(['nome', 'telefone', 'foto', 'sobraAutomatica']);
+    }
+
+    // =========================================================
+    // REGRAS PARA TRANSAÇÕES
+    // =========================================================
     match /transacoes_app/{documentId} {
-      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.uid == request.auth.uid && (request.method == 'delete' || request.resource.data.uid == request.auth.uid);
+      // Leitura: apenas o dono do documento
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+
+      // Criação: autenticado, dados válidos, UID bate
+      allow create: if isAuthenticated() && isValidTransacao();
+
+      // Atualização: autenticado, dono, dados válidos, UID imutável
+      allow update: if isAuthenticated()
+                    && resource.data.uid == request.auth.uid
+                    && isValidTransacaoUpdate();
+
+      // Exclusão: apenas o dono
+      allow delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
     }
 
-    // Regras para investimentos
+    // =========================================================
+    // REGRAS PARA INVESTIMENTOS
+    // =========================================================
     match /investimentos_app/{documentId} {
-      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.uid == request.auth.uid && (request.method == 'delete' || request.resource.data.uid == request.auth.uid);
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+
+      allow create: if isAuthenticated() && isValidInvestimento();
+
+      allow update: if isAuthenticated()
+                    && resource.data.uid == request.auth.uid
+                    && isValidInvestimentoUpdate();
+
+      allow delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
     }
 
-    // Regras para perfis de usuários e configurações gerais
+    // =========================================================
+    // REGRAS PARA PERFIL DO USUÁRIO
+    // =========================================================
     match /usuarios_app/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Leitura: apenas o próprio usuário
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+
+      // Criação: apenas o próprio usuário, dados válidos
+      allow create: if isAuthenticated()
+                    && request.auth.uid == userId
+                    && isValidPerfil(userId);
+
+      // Atualização: apenas o próprio usuário, dados válidos
+      allow update: if isAuthenticated()
+                    && request.auth.uid == userId
+                    && isValidPerfil(userId);
+
+      // Exclusão: não permitida via cliente (apenas via Admin SDK)
+      allow delete: if false;
+    }
+
+    // =========================================================
+    // REGRA CATCH-ALL: Negar tudo que não foi explicitamente
+    // autorizado acima
+    // =========================================================
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
