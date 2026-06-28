@@ -114,29 +114,44 @@ header {
 }
 
 /* ============================================================
-   ESTILOS DO MODO NOTURNO (DARK MODE OVERRIDES)
+   ESTILOS DO MODO NOTURNO (DARK MODE PREMIUM OVERRIDES)
    ============================================================ */
 body.dark {
-  background-color: #0f172a !important; /* slate-900 */
-  color: #f8fafc !important; /* slate-50 */
+  background-color: #0b0f19 !important; /* Fundo principal escuro e profundo */
+  color: #f8fafc !important; /* Texto claro */
 }
 
-/* Painéis e Cartões brancos ficam escuros */
+/* Cartões Principais */
 body.dark .bg-white {
-  background-color: #1e293b !important; /* slate-800 */
+  background-color: #131b2e !important;
+  border-color: #1e293b !important;
   color: #f8fafc !important;
 }
 
-/* Elementos de layout cinza claro */
+/* Elementos de fundo secundário */
 body.dark .bg-slate-50 {
-  background-color: #0f172a !important; /* slate-900 */
+  background-color: #0b0f19 !important;
 }
 
-body.dark .bg-slate-100 {
-  background-color: #334155 !important; /* slate-700 */
+/* Cabeçalhos de cartões que usam bg-slate-50/50 */
+body.dark .bg-slate-50\/50 {
+  background-color: #17213b !important;
+  border-color: #1e293b !important;
 }
 
-/* Textos */
+/* Divisores e Bordas gerais */
+body.dark .border-slate-100,
+body.dark .border-slate-200,
+body.dark .border-slate-300 {
+  border-color: #1e293b !important;
+}
+
+body.dark .divide-slate-100 > *,
+body.dark .divide-y > * {
+  border-color: #1e293b !important;
+}
+
+/* Textos e Contrastes */
 body.dark .text-slate-800,
 body.dark .text-slate-900 {
   color: #f8fafc !important;
@@ -155,72 +170,178 @@ body.dark .text-slate-400 {
   color: #64748b !important; /* slate-500 */
 }
 
-/* Divisores e Bordas */
-body.dark .border-slate-100,
-body.dark .border-slate-200,
-body.dark .border-slate-300 {
-  border-color: #334155 !important; /* slate-700 */
+/* Títulos específicos e destaques de cores */
+body.dark .text-emerald-800 {
+  color: #34d399 !important; /* Verde vibrante para o título do Mês */
 }
 
-body.dark .divide-slate-100 > *,
-body.dark .divide-y > * {
-  border-color: #334155 !important;
+body.dark .text-emerald-700 {
+  color: #34d399 !important;
 }
 
-/* Inputs, Selects e Textareas */
+body.dark .text-rose-700 {
+  color: #f87171 !important;
+}
+
+body.dark .text-violet-700 {
+  color: #c084fc !important;
+}
+
+/* Cabeçalho de Investimentos (Substitui o gradiente claro e melhora contraste) */
+body.dark .from-violet-50.to-indigo-50 {
+  background: linear-gradient(to right, #2e1065, #1e1b4b) !important;
+  border-color: #4338ca !important;
+}
+body.dark #total-investido-badge {
+  background-color: rgba(139, 92, 246, 0.2) !important;
+  color: #c084fc !important;
+  border: 1px solid rgba(139, 92, 246, 0.4) !important;
+}
+
+/* Botões de Ação Rápida (Conserta o brilho excessivo) */
+body.dark .bg-emerald-100 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+body.dark .bg-emerald-100:hover {
+  background-color: rgba(16, 185, 129, 0.25) !important;
+}
+
+body.dark .bg-rose-100 {
+  background-color: rgba(244, 63, 94, 0.15) !important;
+  color: #f87171 !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+body.dark .bg-rose-100:hover {
+  background-color: rgba(244, 63, 94, 0.25) !important;
+}
+
+body.dark .bg-violet-100 {
+  background-color: rgba(139, 92, 246, 0.15) !important;
+  color: #c084fc !important;
+  border-color: rgba(139, 92, 246, 0.3) !important;
+}
+body.dark .bg-violet-100:hover {
+  background-color: rgba(139, 92, 246, 0.25) !important;
+}
+
+/* Efeito Hover nas listas */
+body.dark .hover\:bg-slate-50:hover,
+body.dark .group:hover {
+  background-color: #1e293b !important;
+}
+
+body.dark .hover\:bg-slate-100:hover {
+  background-color: #1e293b !important;
+}
+
+body.dark .hover\:bg-emerald-50:hover {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  color: #34d399 !important;
+}
+
+/* Badges e tags dentro das listas */
+body.dark .bg-emerald-100.text-emerald-600 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+}
+
+body.dark .bg-rose-100.text-rose-600 {
+  background-color: rgba(244, 63, 94, 0.15) !important;
+  color: #f87171 !important;
+}
+
+body.dark .bg-violet-100.text-violet-600 {
+  background-color: rgba(139, 92, 246, 0.15) !important;
+  color: #c084fc !important;
+}
+
+body.dark .bg-slate-100.rounded-full {
+  background-color: #1e293b !important; /* trilha da barra de progresso */
+}
+
+/* Inputs e Elementos de Formulário */
 body.dark input,
 body.dark select,
 body.dark textarea {
-  background-color: #1e293b !important;
+  background-color: #0b0f19 !important;
   color: #f8fafc !important;
-  border-color: #334155 !important;
+  border-color: #1e293b !important;
+}
+body.dark input:focus,
+body.dark select:focus {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
 }
 
 body.dark input::placeholder {
-  color: #64748b !important;
+  color: #475569 !important;
 }
 
-/* Modais e Cabeçalhos de Modais */
-body.dark #modal-configuracoes .bg-white,
-body.dark #modal-cadastro .bg-white,
-body.dark #modal-perfil .bg-white,
-body.dark #modal-investimento .bg-white {
-  background-color: #1e293b !important;
+/* Cabeçalho Principal */
+body.dark header,
+body.dark .bg-emerald-600 {
+  background-color: #064e3b !important; /* Verde escuro sofisticado */
 }
 
-/* Botões do Modal de Configuração (Exportar, Restaurar, etc) */
+/* Cartões de Entrada / Saída / Saldo superior */
+body.dark #cartao-saldo {
+  background-color: #131b2e !important;
+}
+body.dark #cartao-saldo[data-negativo="true"] {
+  background-color: #4c0519 !important; /* Rose escuro profundo */
+}
+
+/* Modais */
+body.dark .modal-overlay .bg-white {
+  background-color: #131b2e !important;
+  border-color: #1e293b !important;
+}
+
+body.dark .modal-overlay header,
+body.dark .modal-overlay .bg-slate-800 {
+  background-color: #0b0f19 !important;
+  border-bottom: 1px solid #1e293b !important;
+}
+
+/* Botões secundários no modal de configuração */
 body.dark .bg-emerald-50 {
-  background-color: #064e3b !important; /* emerald-900 */
-  color: #a7f3d0 !important; /* emerald-200 */
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
 }
 body.dark .bg-blue-50 {
-  background-color: #1e3a8a !important; /* blue-900 */
-  color: #bfdbfe !important; /* blue-200 */
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  color: #60a5fa !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
 }
 
-/* Efeito Hover nas linhas do Histórico */
-body.dark .hover\:bg-slate-50:hover,
-body.dark .group:hover {
+/* Barra lateral do Histórico (Gaveta lateral) */
+body.dark #modal-notificacoes #notif-panel,
+body.dark #modal-historico > div {
+  background-color: #131b2e !important;
+  border-left: 1px solid #1e293b !important;
+}
+
+/* Toggles */
+body.dark #toggle-sobra-auto:not(.bg-emerald-500),
+body.dark #toggle-modo-escuro:not(.bg-emerald-500) {
   background-color: #334155 !important;
 }
 
-/* Cabeçalho principal */
-body.dark header,
-body.dark .bg-emerald-600 {
-  background-color: #064e3b !important; /* emerald-900 (tom elegante para o header) */
+/* Custom scrollbar para ficar elegante */
+body.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
-
-/* Cartão de Saldo do Mês (Destaques) */
-body.dark #cartao-saldo {
-  background-color: #1e293b !important;
+body.dark ::-webkit-scrollbar-track {
+  background: #0b0f19;
 }
-body.dark #cartao-saldo[data-negativo="true"] {
-  background-color: #450a0a !important; /* vermelho bem escuro */
+body.dark ::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
 }
-
-/* Ajustes nos inputs ocultos e arquivo */
-body.dark #toggle-sobra-auto:not(.bg-emerald-500),
-body.dark #toggle-modo-escuro:not(.bg-emerald-500) {
-  background-color: #475569 !important; /* slate-600 */
+body.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
 }
-
