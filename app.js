@@ -1572,10 +1572,13 @@ window.processarImportacao = (event) => {
 };
 
 // --- INICIALIZAÇÃO DA PÁGINA ---
-atualizarDadosPerfilHeader();
-aplicarTemaEscuro();
-inicializarNotificacoes();
-renderIcons();
+document.addEventListener('DOMContentLoaded', () => {
+  atualizarDadosPerfilHeader();
+  aplicarTemaEscuro();
+  inicializarNotificacoes();
+  renderIcons();
+});
+
 
 // ==========================================
 // SISTEMA DE NOTIFICAÇÕES (NATIVE IN-APP)
@@ -1633,7 +1636,10 @@ function inicializarNotificacoes() {
     </div>
   `;
   
-  const jaLida = localStorage.getItem('notif_lida_v1') === 'true';
+  // Re-renderizar ícones Lucide dentro do card injetado
+  renderIcons();
+  
+  const jaLida = localStorage.getItem('notif_lida_v2') === 'true';
   if (!jaLida && badge) {
     badge.classList.remove('hidden');
   }
@@ -1648,7 +1654,7 @@ window.abrirModalNotificacoes = () => {
   
   const badge = document.getElementById('badge-notificacao');
   if (badge) badge.classList.add('hidden');
-  localStorage.setItem('notif_lida_v1', 'true');
+  localStorage.setItem('notif_lida_v2', 'true');
 };
 
 window.fecharModalNotificacoes = () => {
