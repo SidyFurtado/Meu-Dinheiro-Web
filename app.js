@@ -725,6 +725,12 @@ const DARK_STYLES = `
   ::-webkit-scrollbar-track { background: #0b0f19; }
   ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+  /* === PROJEÇÃO DE FLUXO DE CAIXA === */
+  .modal-overlay .bg-slate-50 { background-color: #0b1628 !important; border-color: #1e2d45 !important; }
+  .modal-overlay .bg-slate-50\/50 { background-color: #131f37 !important; border-color: #1e2d45 !important; }
+  #lista-agendamentos { background-color: #131b2e !important; }
+  #proj-contador-pendentes { background-color: #1e2d45 !important; color: #cbd5e1 !important; }
 `;
 
 function aplicarTemaEscuro() {
@@ -795,6 +801,7 @@ document.getElementById('form-transacao').addEventListener('submit', async (e) =
   const inputOutros = document.getElementById('form-categoria-outros');
   const categoria = selectCat.value === 'Outros' && inputOutros.value.trim() ? inputOutros.value.trim() : selectCat.value;
   const data = document.getElementById('form-data').value;
+  const pago = document.getElementById('form-pago').checked;
 
   if (!descricao || isNaN(valor) || valor <= 0 || !categoria) return;
 
@@ -812,7 +819,7 @@ document.getElementById('form-transacao').addEventListener('submit', async (e) =
         const descSanitizada = descricao.trim().slice(0, 300);
         const catSanitizada = categoria.trim().slice(0, 100);
         if (!descSanitizada) { mostrarToast('Descrição inválida.', 'error'); return; }
-        const payload = { type: tipo, description: descSanitizada, amount: valor, category: catSanitizada, date: data, uid: auth.currentUser.uid };
+        const payload = { type: tipo, description: descSanitizada, amount: valor, category: catSanitizada, date: data, pago, uid: auth.currentUser.uid };
         await updateDoc(doc(db, 'transacoes_app', idTransacaoEmEdicao), payload);
         transacoes[index] = { id: idTransacaoEmEdicao, ...payload };
         mostrarToast('Conta atualizada com sucesso!');
@@ -822,7 +829,7 @@ document.getElementById('form-transacao').addEventListener('submit', async (e) =
       const descSanitizada = descricao.trim().slice(0, 300);
       const catSanitizada = categoria.trim().slice(0, 100);
       if (!descSanitizada) { mostrarToast('Descrição inválida.', 'error'); return; }
-      const payload = { type: tipo, description: descSanitizada, amount: valor, category: catSanitizada, date: data, uid: auth.currentUser.uid };
+      const payload = { type: tipo, description: descSanitizada, amount: valor, category: catSanitizada, date: data, pago, uid: auth.currentUser.uid };
       const docRef = await addDoc(collection(db, 'transacoes_app'), payload);
       transacoes.push({ id: docRef.id, ...payload });
       mostrarToast('Conta adicionada com sucesso!');
@@ -875,6 +882,7 @@ window.abrirModal = (tipo) => {
   document.getElementById('btn-salvar').innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> Confirmar e Salvar';
   document.getElementById('form-desc').value = '';
   document.getElementById('form-valor').value = '';
+  document.getElementById('form-pago').checked = true; // Pago por padrão ao criar
 
   const agora = new Date();
   if (dataVisualizacao.getFullYear() === agora.getFullYear() && dataVisualizacao.getMonth() === agora.getMonth()) {
@@ -894,6 +902,7 @@ window.abrirModalEdicao = (id) => {
   mudarTipo(transacao.type);
   document.getElementById('form-desc').value = transacao.description;
   document.getElementById('form-valor').value = transacao.amount;
+  document.getElementById('form-pago').checked = transacao.pago !== false; // Carrega estado
 
   // Bug 1 fix: Restaurar categorias customizadas corretamente
   const cats = transacao.type === 'income' ? CATEGORIAS_ENTRADA : CATEGORIAS_SAIDA;
@@ -944,6 +953,7 @@ window.abrirModalInvestimento = (idEditar) => {
     document.getElementById('inv-desc').value = inv.description;
     document.getElementById('inv-valor').value = inv.amount;
     document.getElementById('inv-data').value = inv.date;
+    document.getElementById('inv-pago').checked = inv.pago !== false; // Carrega estado
     document.getElementById('modal-inv-title').innerText = 'Editar Investimento';
     document.getElementById('btn-salvar-inv').innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> Salvar Alterações';
     // Set categoria
@@ -957,6 +967,7 @@ window.abrirModalInvestimento = (idEditar) => {
   } else {
     document.getElementById('inv-desc').value = '';
     document.getElementById('inv-valor').value = '';
+    document.getElementById('inv-pago').checked = true; // Pago por padrão
     selectCat.value = 'Ações';
     document.getElementById('modal-inv-title').innerText = 'Registrar Investimento';
     document.getElementById('btn-salvar-inv').innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> Confirmar Investimento';
@@ -983,6 +994,7 @@ document.getElementById('form-investimento').addEventListener('submit', async (e
   const inputOutros = document.getElementById('inv-categoria-outros');
   const categoria = selectCat.value === 'Outros' && inputOutros.value.trim() ? inputOutros.value.trim() : selectCat.value;
   const data = document.getElementById('inv-data').value;
+  const pago = document.getElementById('inv-pago').checked;
 
   if (!descricao || isNaN(valor) || valor <= 0 || !categoria || !data) return;
 
@@ -996,13 +1008,13 @@ document.getElementById('form-investimento').addEventListener('submit', async (e
     if (idInvestimentoEmEdicao) {
       const index = investimentos.findIndex(i => i.id === idInvestimentoEmEdicao);
       if (index !== -1) {
-        const payload = { description: descricao, amount: valor, category: categoria, date: data, uid: auth.currentUser.uid };
+        const payload = { description: descricao, amount: valor, category: categoria, date: data, pago, uid: auth.currentUser.uid };
         await updateDoc(doc(db, "investimentos_app", idInvestimentoEmEdicao), payload);
         investimentos[index] = { id: idInvestimentoEmEdicao, ...payload };
         mostrarToast('Investimento atualizado com sucesso!');
       }
     } else {
-      const payload = { description: descricao, amount: valor, category: categoria, date: data, uid: auth.currentUser.uid };
+      const payload = { description: descricao, amount: valor, category: categoria, date: data, pago, uid: auth.currentUser.uid };
       const docRef = await addDoc(collection(db, "investimentos_app"), payload);
       investimentos.push({ id: docRef.id, ...payload });
       mostrarToast('Investimento registrado com sucesso!');
@@ -1075,8 +1087,8 @@ function calcularSobraDoMes(ano, mes, _visitados = new Set()) {
   if (_visitados.has(chave)) return 0;
   _visitados.add(chave);
 
-  const t = filtrarListaPorMes(transacoes, ano, mes);
-  const inv = filtrarListaPorMes(investimentos, ano, mes);
+  const t = filtrarListaPorMes(transacoes, ano, mes).filter(x => x.pago !== false);
+  const inv = filtrarListaPorMes(investimentos, ano, mes).filter(x => x.pago !== false);
 
   // Se não há nenhum registro neste mês, interrompe a cadeia
   if (t.length === 0 && inv.length === 0) return 0;
@@ -1105,8 +1117,8 @@ function atualizarTela() {
 
   const transacoesDoMes = filtrarListaPorMes(transacoes, anoVisualizado, mesVisualizado);
   const investimentosDoMes = filtrarListaPorMes(investimentos, anoVisualizado, mesVisualizado);
-  const resumo = calcularResumo(transacoesDoMes);
-  const resumoInv = calcularResumoInvestimentos(investimentosDoMes);
+  const resumo = calcularResumo(transacoesDoMes.filter(x => x.pago !== false));
+  const resumoInv = calcularResumoInvestimentos(investimentosDoMes.filter(x => x.pago !== false));
 
   // --- SOBRA AUTOMÁTICA ---
   let sobraAnterior = 0;
@@ -1142,34 +1154,45 @@ function atualizarTela() {
   if (transacoesDoMes.length === 0) {
     listaHTML.innerHTML = `<div class="p-8 text-center text-slate-400"><p>Nenhuma conta registrada neste mês.</p></div>`;
   } else {
-    listaHTML.innerHTML = transacoesDoMes.map(t => `
-      <div class="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
-        <div class="flex items-center gap-4">
-          <div class="p-3 rounded-full ${t.type === 'income' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}">
-            <i data-lucide="${t.type === 'income' ? 'arrow-up-circle' : 'arrow-down-circle'}" class="w-6 h-6"></i>
-          </div>
-          <div>
-            <h3 class="font-semibold text-slate-800">${escaparHTML(t.description)}</h3>
-            <div class="flex items-center gap-2 text-sm text-slate-500 mt-1">
-              <span class="flex items-center gap-1"><i data-lucide="tag" class="w-3 h-3"></i> ${escaparHTML(t.category)}</span>
-              <span>•</span>
-              <span>${formatarData(t.date)}</span>
+    listaHTML.innerHTML = transacoesDoMes.map(t => {
+      const isPendente = t.pago === false;
+      const bgIconClass = isPendente ? 'bg-amber-100 text-amber-600' : (t.type === 'income' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600');
+      const iconName = isPendente ? 'clock' : (t.type === 'income' ? 'arrow-up-circle' : 'arrow-down-circle');
+      const textStyleClass = isPendente ? 'text-slate-400 font-normal line-through opacity-75' : 'font-semibold text-slate-800';
+      const textAmountColor = isPendente ? 'text-amber-500 font-medium' : (t.type === 'income' ? 'text-emerald-600' : 'text-rose-600');
+      
+      return `
+        <div class="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group ${isPendente ? 'bg-amber-50/20' : ''}">
+          <div class="flex items-center gap-4">
+            <div class="p-3 rounded-full ${bgIconClass}">
+              <i data-lucide="${iconName}" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="${textStyleClass}">
+                ${escaparHTML(t.description)}
+                ${isPendente ? '<span class="text-xs bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded ml-2 uppercase tracking-wide">Pendente</span>' : ''}
+              </h3>
+              <div class="flex items-center gap-2 text-sm text-slate-500 mt-1">
+                <span class="flex items-center gap-1"><i data-lucide="tag" class="w-3 h-3"></i> ${escaparHTML(t.category)}</span>
+                <span>•</span>
+                <span>${formatarData(t.date)}</span>
+              </div>
             </div>
           </div>
+          <div class="flex items-center gap-1 sm:gap-2" id="acoes-${t.id}">
+            <span class="font-bold text-lg mr-2 ${textAmountColor}">
+              ${t.type === 'income' ? '+' : '-'}${formatarMoeda(t.amount)}
+            </span>
+            <button onclick="abrirModalEdicao('${t.id}')" class="text-slate-300 hover:text-blue-500 transition-colors p-2" title="Editar conta">
+              <i data-lucide="pencil" class="w-5 h-5"></i>
+            </button>
+            <button onclick="pedirConfirmacaoDelete('${t.id}')" class="text-slate-300 hover:text-rose-500 transition-colors p-2" title="Apagar conta">
+              <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </button>
+          </div>
         </div>
-        <div class="flex items-center gap-1 sm:gap-2" id="acoes-${t.id}">
-          <span class="font-bold text-lg mr-2 ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}">
-            ${t.type === 'income' ? '+' : '-'}${formatarMoeda(t.amount)}
-          </span>
-          <button onclick="abrirModalEdicao('${t.id}')" class="text-slate-300 hover:text-blue-500 transition-colors p-2" title="Editar conta">
-            <i data-lucide="pencil" class="w-5 h-5"></i>
-          </button>
-          <button onclick="pedirConfirmacaoDelete('${t.id}')" class="text-slate-300 hover:text-rose-500 transition-colors p-2" title="Apagar conta">
-            <i data-lucide="trash-2" class="w-5 h-5"></i>
-          </button>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   // --- GASTOS DO MÊS (com investimentos incluídos como categoria) ---
@@ -1478,6 +1501,8 @@ window.processarImportacao = (event) => {
           throw new Error(`Transação ${n}: "category" inválida (máx 100 chars).`);
         if (typeof t.date !== 'string' || t.date.length !== 10 || !/^\d{4}-\d{2}-\d{2}$/.test(t.date))
           throw new Error(`Transação ${n}: "date" inválida. Use formato YYYY-MM-DD.`);
+        if (t.pago !== undefined && typeof t.pago !== 'boolean')
+          throw new Error(`Transação ${n}: "pago" deve ser um valor booleano.`);
       });
 
       // Valida investimentos (se presentes)
@@ -1500,6 +1525,8 @@ window.processarImportacao = (event) => {
             throw new Error(`Investimento ${n}: "category" inválida (máx 100 chars).`);
           if (typeof inv.date !== 'string' || inv.date.length !== 10 || !/^\d{4}-\d{2}-\d{2}$/.test(inv.date))
             throw new Error(`Investimento ${n}: "date" inválida. Use formato YYYY-MM-DD.`);
+          if (inv.pago !== undefined && typeof inv.pago !== 'boolean')
+            throw new Error(`Investimento ${n}: "pago" deve ser um valor booleano.`);
         });
       }
 
@@ -1568,3 +1595,381 @@ window.fecharModalNotificacoes = () => {
   panel.classList.add('translate-x-full');
   setTimeout(() => modal.classList.add('hidden'), 300);
 };
+
+// ==========================================
+// SISTEMA DE PROJEÇÃO DE FLUXO DE CAIXA
+// ==========================================
+
+let projecaoChartInstance = null;
+
+// Helper: Formata data curta DD/MM
+function formatarDataCurta(date) {
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  return `${d}/${m}`;
+}
+
+// Helper: Formata YYYY-MM-DD
+function obterDataFormatada(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+// Helper: Calcula saldo consolidado até hoje (passado + hoje, apenas pagos)
+function obterSaldoAteHoje() {
+  const limiteHoje = new Date();
+  limiteHoje.setHours(23, 59, 59, 999);
+  
+  const anoHoje = limiteHoje.getFullYear();
+  const mesHoje = limiteHoje.getMonth();
+  
+  // Sobra acumulada dos meses anteriores
+  let sobraAnterior = 0;
+  if (sobraAutomaticaAtiva) {
+    const ant = mesAnterior(anoHoje, mesHoje);
+    sobraAnterior = calcularSobraDoMes(ant.ano, ant.mes);
+  }
+  
+  // Filtrar pagos do próprio mês até o limite do dia de hoje (fim do dia)
+  const transacoesHoje = filtrarListaPorMes(transacoes, anoHoje, mesHoje)
+    .filter(t => t.pago !== false && new Date(t.date + 'T00:00:00') <= limiteHoje);
+  const investimentosHoje = filtrarListaPorMes(investimentos, anoHoje, mesHoje)
+    .filter(i => i.pago !== false && new Date(i.date + 'T00:00:00') <= limiteHoje);
+    
+  const r = calcularResumo(transacoesHoje);
+  const rInv = calcularResumoInvestimentos(investimentosHoje);
+  
+  return (r.entradas + sobraAnterior) - (r.saidas + rInv.total);
+}
+
+window.abrirProjecaoFluxo = () => {
+  document.getElementById('proj-periodo').value = 'mes';
+  calcularProjecaoFluxo('mes');
+  abrirModalGenerico('modal-projecao-fluxo');
+};
+
+window.fecharProjecaoFluxo = () => {
+  fecharModalGenerico('modal-projecao-fluxo');
+  if (projecaoChartInstance) {
+    projecaoChartInstance.destroy();
+    projecaoChartInstance = null;
+  }
+};
+
+window.selecionarPeriodoProjecao = (periodo) => {
+  calcularProjecaoFluxo(periodo);
+};
+
+window.calcularProjecaoFluxo = (periodo) => {
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  
+  const stringHoje = obterDataFormatada(hoje);
+  const limiteHoje = new Date();
+  limiteHoje.setHours(23, 59, 59, 999);
+  
+  // 1. Calcular Saldo Inicial (consolidado até hoje)
+  const saldoAtual = obterSaldoAteHoje();
+  document.getElementById('proj-saldo-atual').innerText = formatarMoeda(saldoAtual);
+  
+  // 2. Determinar fim do período de projeção
+  let fimPeriodo = new Date(hoje);
+  if (periodo === 'mes') {
+    // Último dia do mês atual
+    fimPeriodo = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+  } else {
+    // 90 dias a partir de hoje
+    fimPeriodo.setDate(hoje.getDate() + 90);
+  }
+  fimPeriodo.setHours(23, 59, 59, 999);
+  
+  // 3. Otimização: Hash Map de transações futuras/pendentes agrupadas por data O(1)
+  const transacoesAgrupadas = {};
+  let totalReceber = 0;
+  let totalPagar = 0;
+  const listaAgendamentos = [];
+  
+  transacoes.forEach(t => {
+    const d = new Date(t.date + 'T00:00:00');
+    d.setHours(0, 0, 0, 0);
+    
+    const isPendente = t.pago === false;
+    const isFutura = d > limiteHoje;
+    
+    if (isPendente || isFutura) {
+      if (t.type === 'income') totalReceber += t.amount;
+      else totalPagar += t.amount;
+      
+      listaAgendamentos.push({ ...t, isInvestimento: false });
+      
+      // Overdue (pendentes no passado) são contabilizadas em "hoje" na projeção para impacto imediato
+      const chave = d < limiteHoje ? stringHoje : t.date;
+      if (!transacoesAgrupadas[chave]) {
+        transacoesAgrupadas[chave] = [];
+      }
+      transacoesAgrupadas[chave].push({ ...t, isInvestimento: false });
+    }
+  });
+  
+  investimentos.forEach(inv => {
+    const d = new Date(inv.date + 'T00:00:00');
+    d.setHours(0, 0, 0, 0);
+    
+    const isPendente = inv.pago === false;
+    const isFuturo = d > limiteHoje;
+    
+    if (isPendente || isFuturo) {
+      totalPagar += inv.amount;
+      listaAgendamentos.push({ ...inv, isInvestimento: true });
+      
+      const chave = d < limiteHoje ? stringHoje : inv.date;
+      if (!transacoesAgrupadas[chave]) {
+        transacoesAgrupadas[chave] = [];
+      }
+      transacoesAgrupadas[chave].push({ ...inv, isInvestimento: true });
+    }
+  });
+  
+  // Atualizar cards de resumo adicionais
+  document.getElementById('proj-total-receber').innerText = formatarMoeda(totalReceber);
+  document.getElementById('proj-total-pagar').innerText = formatarMoeda(totalPagar);
+  const saldoFinalProjetado = saldoAtual + totalReceber - totalPagar;
+  document.getElementById('proj-saldo-final').innerText = formatarMoeda(saldoFinalProjetado);
+  
+  // 4. Executar simulação diária com busca O(1) no dicionário
+  const labels = [];
+  const valoresProjetados = [];
+  let saldoSimulado = saldoAtual;
+  
+  const dataCursor = new Date(hoje);
+  dataCursor.setHours(0, 0, 0, 0);
+  
+  // Ponto inicial: Hoje
+  labels.push(formatarDataCurta(dataCursor));
+  
+  // Aplicar transações do próprio dia de hoje (inclui as passadas pendentes reagrupadas)
+  const chaveHoje = obterDataFormatada(dataCursor);
+  if (transacoesAgrupadas[chaveHoje]) {
+    transacoesAgrupadas[chaveHoje].forEach(item => {
+      if (item.isInvestimento) {
+        saldoSimulado -= item.amount;
+      } else {
+        if (item.type === 'income') saldoSimulado += item.amount;
+        else saldoSimulado -= item.amount;
+      }
+    });
+  }
+  valoresProjetados.push(saldoSimulado);
+  
+  // Simular dia a dia
+  while (dataCursor < fimPeriodo) {
+    dataCursor.setDate(dataCursor.getDate() + 1);
+    
+    const chaveData = obterDataFormatada(dataCursor);
+    if (transacoesAgrupadas[chaveData]) {
+      transacoesAgrupadas[chaveData].forEach(item => {
+        if (item.isInvestimento) {
+          saldoSimulado -= item.amount;
+        } else {
+          if (item.type === 'income') saldoSimulado += item.amount;
+          else saldoSimulado -= item.amount;
+        }
+      });
+    }
+    
+    labels.push(formatarDataCurta(dataCursor));
+    valoresProjetados.push(saldoSimulado);
+  }
+  
+  // 5. Renderizar o gráfico com Chart.js
+  renderizarGraficoProjecao(labels, valoresProjetados);
+  
+  // 6. Ordenar e renderizar lista detalhada de lançamentos
+  listaAgendamentos.sort((a, b) => new Date(a.date + 'T00:00:00') - new Date(b.date + 'T00:00:00'));
+  
+  const containerList = document.getElementById('lista-agendamentos');
+  document.getElementById('proj-contador-pendentes').innerText = `${listaAgendamentos.length} pendentes`;
+  
+  if (listaAgendamentos.length === 0) {
+    containerList.innerHTML = `<div class="p-6 text-center text-slate-400 text-sm">Nenhum lançamento futuro ou pendente encontrado.</div>`;
+  } else {
+    containerList.innerHTML = listaAgendamentos.map(item => {
+      const d = new Date(item.date + 'T00:00:00');
+      d.setHours(0, 0, 0, 0);
+      const isVencido = d < hoje && item.pago === false;
+      
+      const badgeStatus = isVencido 
+        ? `<span class="text-xs bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded uppercase tracking-wide">Vencido</span>`
+        : `<span class="text-xs bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded uppercase tracking-wide">Agendado</span>`;
+        
+      const tipoText = item.isInvestimento 
+        ? 'Investimento' 
+        : (item.type === 'income' ? 'Receita' : 'Despesa');
+        
+      const valorColor = item.isInvestimento 
+        ? 'text-violet-600' 
+        : (item.type === 'income' ? 'text-emerald-600' : 'text-rose-600');
+        
+      const sinal = item.isInvestimento 
+        ? '-' 
+        : (item.type === 'income' ? '+' : '-');
+        
+      return `
+        <div class="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+          <div>
+            <div class="flex items-center gap-2">
+              <h5 class="font-semibold text-slate-800">${escaparHTML(item.description)}</h5>
+              ${badgeStatus}
+            </div>
+            <div class="flex items-center gap-2 text-xs text-slate-500 mt-1">
+              <span>${tipoText}</span>
+              <span>•</span>
+              <span>${formatarData(item.date)}</span>
+              <span>•</span>
+              <span>${escaparHTML(item.category)}</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <span class="font-bold ${valorColor}">
+              ${sinal}${formatarMoeda(item.amount)}
+            </span>
+            ${item.pago === false ? `
+              <button onclick="confirmarPagamentoProjetado('${item.id}', ${item.isInvestimento})" 
+                class="text-emerald-500 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 p-2 rounded-xl transition-colors flex items-center justify-center" 
+                title="Marcar como Pago">
+                <i data-lucide="check" class="w-4 h-4"></i>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+    renderIcons();
+  }
+};
+
+function renderizarGraficoProjecao(labels, valores) {
+  const ctx = document.getElementById('chart-projecao').getContext('2d');
+  
+  if (projecaoChartInstance) {
+    projecaoChartInstance.destroy();
+  }
+  
+  const isDark = document.body.classList.contains('dark');
+  const lineColor = '#10b981'; // emerald-500
+  const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+  const textColor = isDark ? '#94a3b8' : '#64748b';
+  const pointBgColor = '#ffffff';
+  
+  projecaoChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Saldo Projetado (R$)',
+        data: valores,
+        borderColor: lineColor,
+        borderWidth: 3,
+        pointBackgroundColor: pointBgColor,
+        pointBorderColor: lineColor,
+        pointHoverRadius: 6,
+        pointRadius: labels.length > 40 ? 0 : 4,
+        fill: true,
+        backgroundColor: (context) => {
+          const chart = context.chart;
+          const {ctx, chartArea} = chart;
+          if (!chartArea) return null;
+          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          gradient.addColorStop(0, isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.12)');
+          gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+          return gradient;
+        },
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            label: function(context) {
+              let label = context.dataset.label || '';
+              if (label) {
+                label += ': ';
+              }
+              if (context.parsed.y !== null) {
+                label += formatarMoeda(context.parsed.y);
+              }
+              return label;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            color: textColor,
+            font: {
+              family: 'sans-serif',
+              size: 11
+            },
+            maxTicksLimit: 12
+          }
+        },
+        y: {
+          grid: {
+            color: gridColor
+          },
+          ticks: {
+            color: textColor,
+            font: {
+              family: 'sans-serif',
+              size: 11
+            },
+            callback: function(value) {
+              return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+window.confirmarPagamentoProjetado = async (id, isInvestimento) => {
+  try {
+    if (isInvestimento) {
+      const index = investimentos.findIndex(i => i.id === id);
+      if (index !== -1) {
+        investimentos[index].pago = true;
+        await updateDoc(doc(db, "investimentos_app", id), { pago: true });
+      }
+    } else {
+      const index = transacoes.findIndex(t => t.id === id);
+      if (index !== -1) {
+        transacoes[index].pago = true;
+        await updateDoc(doc(db, "transacoes_app", id), { pago: true });
+      }
+    }
+    mostrarToast('Lançamento consolidado com sucesso!');
+    atualizarTela();
+    
+    // Recarregar a projeção atualizada no modal que está aberto
+    const periodo = document.getElementById('proj-periodo').value;
+    calcularProjecaoFluxo(periodo);
+  } catch (error) {
+    mostrarToast('Erro ao consolidar lançamento. Tente novamente.', 'error');
+  }
+};
+

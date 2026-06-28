@@ -143,12 +143,19 @@
           </button>
         </div>
 
-        <!-- ABA DE HISTÓRICO E RELATÓRIOS -->
-        <button onclick="abrirHistorico()"
-          class="w-full bg-slate-800 text-white rounded-xl p-3 shadow-sm hover:bg-slate-900 transition-colors flex items-center justify-center gap-2 font-semibold">
-          <i data-lucide="folder-open" class="w-5 h-5 text-emerald-400"></i>
-          Histórico e Relatórios
-        </button>
+        <!-- ABAS DE NAVEGAÇÃO ANALÍTICA -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button onclick="abrirHistorico()"
+            class="w-full bg-slate-800 text-white rounded-xl p-3 shadow-sm hover:bg-slate-900 transition-colors flex items-center justify-center gap-2 font-semibold">
+            <i data-lucide="folder-open" class="w-5 h-5 text-emerald-400"></i>
+            Histórico e Relatórios
+          </button>
+          <button onclick="abrirProjecaoFluxo()"
+            class="w-full bg-slate-800 text-white rounded-xl p-3 shadow-sm hover:bg-slate-900 transition-colors flex items-center justify-center gap-2 font-semibold">
+            <i data-lucide="line-chart" class="w-5 h-5 text-emerald-400"></i>
+            Projeção de Fluxo
+          </button>
+        </div>
       </div>
 
       <!-- CARTÕES DE RESUMO -->
@@ -348,6 +355,13 @@
               <input type="date" id="form-data" required
                 class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800" />
             </div>
+          </div>
+
+          <!-- STATUS PAGO / PENDENTE -->
+          <div class="flex items-center gap-2 pt-2">
+            <input type="checkbox" id="form-pago" checked
+              class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 cursor-pointer">
+            <label for="form-pago" class="text-sm font-semibold text-slate-700 cursor-pointer select-none">Esta transação já foi paga/recebida</label>
           </div>
 
           <button type="submit" id="btn-salvar"
@@ -567,6 +581,13 @@
             </div>
           </div>
 
+          <!-- STATUS PAGO / PENDENTE -->
+          <div class="flex items-center gap-2 pt-2">
+            <input type="checkbox" id="inv-pago" checked
+              class="w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500 cursor-pointer">
+            <label for="inv-pago" class="text-sm font-semibold text-slate-700 cursor-pointer select-none">Este investimento já foi consolidado/pago</label>
+          </div>
+
           <button type="submit" id="btn-salvar-inv"
             class="w-full text-white font-bold rounded-xl py-4 mt-4 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700">
             <i data-lucide="save" class="w-5 h-5"></i> Confirmar Investimento
@@ -608,6 +629,78 @@
     </div>
   </div>
 
+
+  <!-- =============================================== -->
+  <!-- MODAL DE PROJEÇÃO DE FLUXO DE CAIXA             -->
+  <!-- =============================================== -->
+  <div id="modal-projecao-fluxo" role="dialog" aria-modal="true" aria-labelledby="proj-title"
+    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden fade-in modal-overlay">
+    <div class="bg-white rounded-3xl w-full max-w-4xl shadow-2xl zoom-in max-h-[95vh] overflow-y-auto relative flex flex-col">
+      <!-- HEADER -->
+      <div class="p-6 text-white flex justify-between items-center bg-slate-800 sticky top-0 z-10 shrink-0 shadow-sm transition-colors">
+        <h3 id="proj-title" class="text-xl font-bold flex items-center gap-2">
+          <i data-lucide="line-chart" class="w-5 h-5 text-emerald-400"></i> Projeção de Fluxo de Caixa
+        </h3>
+        <div class="flex items-center gap-4">
+          <!-- Filtro de período -->
+          <select id="proj-periodo" onchange="selecionarPeriodoProjecao(this.value)"
+            class="bg-slate-700 text-white border-none rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold cursor-pointer">
+            <option value="mes">Fim do Mês</option>
+            <option value="trimestre">Trimestre (90 dias)</option>
+          </select>
+          <button onclick="fecharProjecaoFluxo()"
+            class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- CONTEÚDO DO MODAL -->
+      <div class="p-6 space-y-6">
+        <!-- Cards Resumo -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Saldo Consolidado</span>
+            <strong id="proj-saldo-atual" class="text-xl font-bold text-slate-800 mt-1">R$ 0,00</strong>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Recebíveis (Pendentes/Futuros)</span>
+            <strong id="proj-total-receber" class="text-xl font-bold text-emerald-600 mt-1">R$ 0,00</strong>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Contas a Pagar (Pendentes/Futuras)</span>
+            <strong id="proj-total-pagar" class="text-xl font-bold text-rose-600 mt-1">R$ 0,00</strong>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Saldo Projetado Final</span>
+            <strong id="proj-saldo-final" class="text-xl font-bold text-slate-800 mt-1">R$ 0,00</strong>
+          </div>
+        </div>
+
+        <!-- Área do Gráfico -->
+        <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 md:p-6 relative">
+          <canvas id="chart-projecao" class="w-full" style="max-height: 350px;"></canvas>
+        </div>
+
+        <!-- Tabela/Lista de Agendamentos Futuros -->
+        <div class="border border-slate-100 rounded-2xl overflow-hidden bg-white">
+          <div class="p-4 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center">
+            <h4 class="font-bold text-slate-800 flex items-center gap-2">
+              <i data-lucide="list-todo" class="w-4 h-4 text-emerald-500"></i> Lançamentos Pendentes / Agendados
+            </h4>
+            <span id="proj-contador-pendentes" class="text-xs font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">0 pendentes</span>
+          </div>
+          <div id="lista-agendamentos" class="divide-y divide-slate-100 max-h-60 overflow-y-auto">
+            <!-- Preenchido via JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- Lucide Icons (CDN com SRI — Subresource Integrity) -->
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"

@@ -42,8 +42,11 @@ service cloud.firestore {
         d.date is string &&
         d.date.size() == 10 &&
 
+        // pago: booleano opcional (status de pago/consolidado)
+        (!('pago' in d) || d.pago is bool) &&
+
         // Nenhum campo extra permitido (previne injeção de dados)
-        d.keys().hasOnly(['uid', 'type', 'description', 'amount', 'category', 'date']);
+        d.keys().hasOnly(['uid', 'type', 'description', 'amount', 'category', 'date', 'pago']);
     }
 
     // Valida campos de uma transação (atualização)
@@ -77,7 +80,10 @@ service cloud.firestore {
         d.date is string &&
         d.date.size() == 10 &&
 
-        d.keys().hasOnly(['uid', 'description', 'amount', 'category', 'date']);
+        // pago: booleano opcional
+        (!('pago' in d) || d.pago is bool) &&
+
+        d.keys().hasOnly(['uid', 'description', 'amount', 'category', 'date', 'pago']);
     }
 
     // Valida campos de um investimento (atualização)
