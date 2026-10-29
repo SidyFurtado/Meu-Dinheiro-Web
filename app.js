@@ -2,8 +2,8 @@
 // CONTROLE FINANCEIRO DESCOMPLICADO — App JS
 // =============================================
 import { db, auth } from './firebase-config.js';
-import { collection, addDoc, updateDoc, deleteDoc, getDocs, doc, query, where, getDoc, setDoc } from 'firebase/firestore';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, OAuthProvider, signInWithPopup } from 'firebase/auth';
+import { collection, addDoc, updateDoc, deleteDoc, getDocs, doc, query, where, getDoc, setDoc, writeBatch } from 'firebase/firestore';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, OAuthProvider, signInWithPopup, sendEmailVerification, deleteUser, reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 // --- CONFIGURAÇÕES DE CATEGORIAS ---
 const CATEGORIAS_ENTRADA = ['Salário', 'Renda Extra', 'Rendimentos', 'Outros'];
@@ -38,12 +38,48 @@ let dataVisualizacao = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 
 // --- UTILITÁRIOS ---
 
-/** Escapa HTML para prevenir XSS */
+/** Escapa HTML para prevenir XSS (seguro também dentro de atributos entre aspas) */
 function escaparHTML(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+
+/** Monta o atributo data-args de um botão delegado (ver despacharAcao) */
+function argsAttr(...args) {
+  return `data-args="${escaparHTML(JSON.stringify(args))}"`;
+}
+
+// --- DELEGAÇÃO DE EVENTOS ---
+// Substitui os onclick/onchange inline: assim a CSP pode bloquear todo script inline
+// ('unsafe-inline'), que é a principal barreira contra XSS. Só funções desta lista
+// podem ser acionadas por atributos data-click / data-change.
+const ACOES_PERMITIDAS = new Set([
+  'fazerLoginGoogle', 'alternarModoAuth', 'fazerLogout',
+  'abrirModalPerfil', 'fecharModalPerfil', 'abrirModalConfiguracoes', 'fecharModalConfiguracoes',
+  'abrirModalNotificacoes', 'fecharModalNotificacoes', 'abrirProjecaoDaNotificacao',
+  'mudarMes', 'abrirHistorico', 'fecharHistorico', 'abrirProjecaoFluxo', 'fecharProjecaoFluxo',
+  'abrirModal', 'fecharModal', 'mudarTipo', 'onchangeCategoria', 'abrirModalEdicao',
+  'abrirModalInvestimento', 'fecharModalInvestimento', 'onchangeCategoriaInv',
+  'toggleSobraAutomatica', 'toggleModoEscuro', 'fazerBackup', 'acionarImportacao',
+  'processarImportacao', 'carregarFoto',
+  'pedirConfirmacaoDelete', 'confirmarDelete', 'cancelarDelete',
+  'pedirConfirmacaoDeleteInv', 'confirmarDeleteInv', 'cancelarDeleteInv',
+  'toggleAnoHistorico', 'gerarRelatorio', 'irParaMesHistorico', 'voltarParaPastas',
+  'confirmarPagamentoProjetado', 'mostrarExclusaoConta', 'cancelarExclusaoConta',
+]);
+
+function despacharAcao(e, atributo) {
+  const el = e.target.closest(`[data-${atributo}]`);
+  if (!el) return;
+  const nome = el.dataset[atributo];
+  if (!ACOES_PERMITIDAS.has(nome) || typeof window[nome] !== 'function') return;
+  if (atributo === 'change') return window[nome](e);
+  let args = [];
+  try { args = el.dataset.args ? JSON.parse(el.dataset.args) : []; } catch { return; }
+  window[nome](...(Array.isArray(args) ? args : []));
+}
+
+document.addEventListener('click', (e) => despacharAcao(e, 'click'));
+document.addEventListener('change', (e) => despacharAcao(e, 'change'));
 
 /** Formata valor como moeda BRL */
 function formatarMoeda(valor) {
@@ -242,6 +278,9 @@ window.alternarModoAuth = () => {
   document.getElementById('btn-auth-text').innerText = modoAuth === 'login' ? 'Entrar' : 'Criar Conta';
   document.getElementById('auth-switch-text').innerText = modoAuth === 'login' ? 'Não tem uma conta?' : 'Já tem uma conta?';
   document.getElementById('btn-auth-switch').innerText = modoAuth === 'login' ? 'Criar conta' : 'Fazer login';
+  // Aceite dos Termos/Privacidade só é exigido na criação de conta
+  document.getElementById('auth-consentimento').classList.toggle('hidden', modoAuth === 'login');
+  document.getElementById('auth-senha').autocomplete = modoAuth === 'login' ? 'current-password' : 'new-password';
 };
 
 document.getElementById('form-auth').addEventListener('submit', async (e) => {
@@ -267,6 +306,16 @@ document.getElementById('form-auth').addEventListener('submit', async (e) => {
     mostrarToast('A senha deve ter entre 6 e 128 caracteres.', 'error');
     return;
   }
+  // Contas novas: mínimo de 8 caracteres (as antigas, de 6, continuam entrando)
+  if (modoAuth === 'cadastro' && senha.length < 8) {
+    mostrarToast('Crie uma senha com pelo menos 8 caracteres.', 'error');
+    return;
+  }
+  if (modoAuth === 'cadastro' && !document.getElementById('auth-aceite').checked) {
+    mostrarToast('Para criar a conta, aceite os Termos de Uso e a Política de Privacidade.', 'error');
+    document.getElementById('auth-aceite').focus();
+    return;
+  }
 
   btn.disabled = true;
   btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Aguarde...';
@@ -280,13 +329,22 @@ document.getElementById('form-auth').addEventListener('submit', async (e) => {
     if (modoAuth === 'login') {
       await signInWithEmailAndPassword(auth, email, senha);
     } else {
-      await createUserWithEmailAndPassword(auth, email, senha);
+      const cred = await createUserWithEmailAndPassword(auth, email, senha);
+      // Confirmação de e-mail: prova que a conta pertence a quem é dono do endereço
+      sendEmailVerification(cred.user).then(
+        () => mostrarToast('Enviamos um link de confirmação para o seu e-mail.', 'info'),
+        () => {}
+      );
     }
   } catch (error) {
     // Mensagens genéricas — não vazam detalhes de implementação
-    let msg = 'E-mail ou senha incorretos.';
+    console.warn('[auth]', error.code);
+    let msg = modoAuth === 'login'
+      ? 'E-mail ou senha incorretos.'
+      : `Não foi possível criar a conta (${error.code || 'erro desconhecido'}).`;
+    if (error.code === 'auth/operation-not-allowed') msg = 'Cadastro por e-mail e senha está desativado no momento.';
     if (error.code === 'auth/email-already-in-use') msg = 'Este e-mail já possui uma conta.';
-    if (error.code === 'auth/weak-password') msg = 'A senha deve ter pelo menos 6 caracteres.';
+    if (error.code === 'auth/weak-password' || error.code === 'auth/password-does-not-meet-requirements') msg = 'Senha fraca. Use pelo menos 8 caracteres, misturando letras e números.';
     if (error.code === 'auth/invalid-email') msg = 'Formato de e-mail inválido.';
     if (error.code === 'auth/too-many-requests') msg = 'Muitas tentativas. Aguarde alguns minutos.';
     if (error.code === 'auth/network-request-failed') msg = 'Falha de rede. Verifique sua conexão.';
@@ -298,9 +356,82 @@ document.getElementById('form-auth').addEventListener('submit', async (e) => {
   }
 });
 
+// --- EXCLUSÃO DE CONTA (LGPD) ---
+// Ordem: confirma a identidade de novo → apaga lançamentos, investimentos e perfil → apaga o login.
+// O login fica por último: sem ele, as regras do Firestore não deixariam apagar os dados.
+const usaSenha = () => auth.currentUser?.providerData.some(p => p.providerId === 'password');
+
+window.mostrarExclusaoConta = () => {
+  document.getElementById('btn-mostrar-exclusao').classList.add('hidden');
+  document.getElementById('form-excluir-conta').classList.remove('hidden');
+  document.getElementById('exclusao-senha-wrap').classList.toggle('hidden', !usaSenha());
+  document.getElementById('exclusao-senha').value = '';
+};
+
+window.cancelarExclusaoConta = () => {
+  document.getElementById('form-excluir-conta').classList.add('hidden');
+  document.getElementById('btn-mostrar-exclusao').classList.remove('hidden');
+  document.getElementById('exclusao-senha').value = '';
+};
+
+async function apagarColecaoDoUsuario(nome, uid) {
+  const snap = await getDocs(query(collection(db, nome), where('uid', '==', uid)));
+  // Lotes de até 500 operações (limite do Firestore)
+  for (let i = 0; i < snap.docs.length; i += 500) {
+    const lote = writeBatch(db);
+    snap.docs.slice(i, i + 500).forEach(d => lote.delete(d.ref));
+    await lote.commit();
+  }
+}
+
+document.getElementById('form-excluir-conta').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const user = auth.currentUser;
+  if (!user) return;
+  const btn = document.getElementById('btn-confirmar-exclusao');
+  const txtOriginal = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Excluindo...';
+  renderIcons();
+
+  try {
+    if (usaSenha()) {
+      const senha = document.getElementById('exclusao-senha').value;
+      if (!senha) { mostrarToast('Digite sua senha para confirmar.', 'error'); return; }
+      await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, senha));
+    } else {
+      await reauthenticateWithPopup(user, new GoogleAuthProvider());
+    }
+
+    await apagarColecaoDoUsuario('transacoes_app', user.uid);
+    await apagarColecaoDoUsuario('investimentos_app', user.uid);
+    await deleteDoc(doc(db, 'usuarios_app', user.uid));
+    await deleteUser(user);
+
+    fecharModalConfiguracoes();
+    cancelarExclusaoConta();
+    mostrarToast('Sua conta e todos os seus dados foram excluídos.', 'info');
+  } catch (error) {
+    console.warn('[excluir-conta]', error.code);
+    let msg = 'Não foi possível excluir a conta. Tente novamente.';
+    if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') msg = 'Senha incorreta.';
+    if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') msg = 'Exclusão cancelada.';
+    if (error.code === 'auth/user-mismatch') msg = 'Entre com a mesma conta Google que você quer excluir.';
+    if (error.code === 'auth/too-many-requests') msg = 'Muitas tentativas. Aguarde alguns minutos.';
+    mostrarToast(msg, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = txtOriginal;
+    renderIcons();
+  }
+});
+
 window.fazerLogout = async () => {
   try {
     await signOut(auth);
+    // Remove do navegador as cópias de dados pessoais (importante em computadores compartilhados)
+    ['meuPerfil', 'transacoes_app', 'investimentos_app', 'sobraAutomatica', 'modoEscuro'].forEach(k => localStorage.removeItem(k));
+    meuPerfil = { nome: 'Usuário', foto: null, telefone: '' };
     fecharModalConfiguracoes();
   } catch (error) {
     mostrarToast("Erro ao sair da conta.", "error");
@@ -335,8 +466,10 @@ onAuthStateChanged(auth, async (user) => {
         meuPerfil = {
           nome: dadosUser.nome || '',
           foto: dadosUser.foto || null,
-          telefone: dadosUser.telefone || ''
+          telefone: ''
         };
+        // Telefone não é mais coletado: apaga valor antigo salvo na nuvem
+        if (dadosUser.telefone) await setDoc(userDocRef, { telefone: '' }, { merge: true });
         sobraAutomaticaAtiva = dadosUser.sobraAutomatica !== false;
         modoEscuroAtivo = dadosUser.modoEscuro === true;
       } else {
@@ -372,6 +505,10 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('app-container').classList.add('hidden');
     transacoes = [];
     investimentos = [];
+    // Sessão encerrada (logout, expiração ou conta excluída): nada pessoal fica no navegador
+    ['meuPerfil', 'transacoes_app', 'investimentos_app'].forEach(k => localStorage.removeItem(k));
+    meuPerfil = { nome: 'Usuário', foto: null, telefone: '' };
+    atualizarDadosPerfilHeader();
     modoEscuroAtivo = false;
     aplicarTemaEscuro();
     sincronizarToggleModoEscuro();
@@ -429,7 +566,6 @@ document.addEventListener('keydown', (e) => {
     fecharHistorico();
     fecharModalInvestimento();
     fecharModalNotificacoes();
-    fecharModalUpdate();
   }
 });
 
@@ -446,6 +582,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+  document.getElementById('modal-notificacoes').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) fecharModalNotificacoes();
+  });
+  document.getElementById('proj-periodo').addEventListener('change', (e) => {
+    selecionarPeriodoProjecao(e.target.value);
+  });
 });
 
 // --- DELETAR COM CONFIRMAÇÃO ---
@@ -456,8 +598,8 @@ window.pedirConfirmacaoDelete = (id) => {
   container.innerHTML = `
     <div class="confirm-delete-bar flex items-center gap-2 text-sm">
       <span class="text-rose-600 font-medium">Apagar?</span>
-      <button onclick="confirmarDelete('${id}')" class="bg-rose-600 text-white px-3 py-1 rounded-lg font-bold hover:bg-rose-700 transition-colors text-xs">Sim</button>
-      <button onclick="cancelarDelete('${id}')" class="bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-bold hover:bg-slate-300 transition-colors text-xs">Não</button>
+      <button data-click="confirmarDelete" ${argsAttr(id)} class="bg-rose-600 text-white px-3 py-1 rounded-lg font-bold hover:bg-rose-700 transition-colors text-xs">Sim</button>
+      <button data-click="cancelarDelete" ${argsAttr(id)} class="bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-bold hover:bg-slate-300 transition-colors text-xs">Não</button>
     </div>
   `;
   renderIcons();
@@ -490,18 +632,26 @@ window.cancelarDelete = (id) => {
 };
 
 // --- SISTEMA DE PERFIL DO USUÁRIO ---
+// Avatar com iniciais gerado localmente (o nome não é enviado a nenhum serviço externo)
+function gerarAvatarIniciais(nome, cor) {
+  const iniciais = (nome || 'U').trim().split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase()
+    .replace(/[^\p{L}\p{N}]/gu, '') || 'U';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="${cor}"/>` +
+    `<text x="32" y="33" font-family="system-ui,sans-serif" font-size="26" font-weight="700" fill="#fff" text-anchor="middle" dominant-baseline="middle">${iniciais}</text></svg>`;
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
 function atualizarDadosPerfilHeader() {
   const nomeExibicao = meuPerfil.nome || 'Usuário';
   document.getElementById('nome-header').innerText = nomeExibicao;
   const avatarEl = document.getElementById('avatar-header');
-  avatarEl.src = meuPerfil.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeExibicao)}&background=10b981&color=fff`;
+  avatarEl.src = meuPerfil.foto || gerarAvatarIniciais(nomeExibicao, '#047857');
 }
 
 window.abrirModalPerfil = () => {
   document.getElementById('perfil-nome').value = meuPerfil.nome || '';
-  document.getElementById('perfil-telefone').value = meuPerfil.telefone || '';
   const preview = document.getElementById('perfil-foto-preview');
-  preview.src = meuPerfil.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(meuPerfil.nome || 'Usuário')}&background=cbd5e1&color=fff`;
+  preview.src = meuPerfil.foto || gerarAvatarIniciais(meuPerfil.nome || 'Usuário', '#64748b');
   avatarBase64Temporario = null;
   abrirModalGenerico('modal-perfil');
 };
@@ -516,8 +666,17 @@ window.abrirModalConfiguracoes = () => {
 
 window.fecharModalConfiguracoes = () => { fecharModalGenerico('modal-configuracoes'); };
 
+const TIPOS_FOTO = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+// Foto salva: sempre JPEG/PNG/WebP em base64 (o mesmo formato exigido nas regras do Firestore)
+const FOTO_DATA_URL = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+
 window.carregarFoto = (event) => {
   const file = event.target.files[0];
+  if (file && (!TIPOS_FOTO.includes(file.type) || file.size > 10 * 1024 * 1024)) {
+    mostrarToast('Use uma imagem JPG, PNG, WebP ou GIF de até 10MB.', 'error');
+    event.target.value = '';
+    return;
+  }
   if (file) {
     const reader = new FileReader();
     reader.onload = function (e) {
@@ -534,7 +693,7 @@ window.carregarFoto = (event) => {
 document.getElementById('form-perfil').addEventListener('submit', async (e) => {
   e.preventDefault();
   meuPerfil.nome = document.getElementById('perfil-nome').value.trim();
-  meuPerfil.telefone = document.getElementById('perfil-telefone').value.trim();
+  meuPerfil.telefone = ''; // Telefone deixou de ser coletado; salvar vazio apaga o valor antigo na nuvem
   if (avatarBase64Temporario) meuPerfil.foto = avatarBase64Temporario;
   
   // Salvar em cache local e na UI
@@ -858,7 +1017,7 @@ window.mudarTipo = (tipo) => {
   const selectCat = document.getElementById('form-categoria');
   const inputOutros = document.getElementById('form-categoria-outros');
   const cats = tipo === 'income' ? CATEGORIAS_ENTRADA : CATEGORIAS_SAIDA;
-  selectCat.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  selectCat.innerHTML = cats.map(c => `<option value="${escaparHTML(c)}">${escaparHTML(c)}</option>`).join('');
   inputOutros.classList.add('hidden');
   inputOutros.value = '';
 };
@@ -1042,8 +1201,8 @@ window.pedirConfirmacaoDeleteInv = (id) => {
   container.innerHTML = `
     <div class="confirm-delete-bar flex items-center gap-2 text-sm">
       <span class="text-rose-600 font-medium">Apagar?</span>
-      <button onclick="confirmarDeleteInv('${id}')" class="bg-rose-600 text-white px-3 py-1 rounded-lg font-bold hover:bg-rose-700 transition-colors text-xs">Sim</button>
-      <button onclick="cancelarDeleteInv('${id}')" class="bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-bold hover:bg-slate-300 transition-colors text-xs">Não</button>
+      <button data-click="confirmarDeleteInv" ${argsAttr(id)} class="bg-rose-600 text-white px-3 py-1 rounded-lg font-bold hover:bg-rose-700 transition-colors text-xs">Sim</button>
+      <button data-click="cancelarDeleteInv" ${argsAttr(id)} class="bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-bold hover:bg-slate-300 transition-colors text-xs">Não</button>
     </div>
   `;
   renderIcons();
@@ -1175,18 +1334,18 @@ function atualizarTela() {
               <div class="flex items-center gap-2 text-sm text-slate-500 mt-1">
                 <span class="flex items-center gap-1"><i data-lucide="tag" class="w-3 h-3"></i> ${escaparHTML(t.category)}</span>
                 <span>•</span>
-                <span>${formatarData(t.date)}</span>
+                <span>${escaparHTML(formatarData(t.date))}</span>
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-1 sm:gap-2" id="acoes-${t.id}">
+          <div class="flex items-center gap-1 sm:gap-2" id="acoes-${escaparHTML(t.id)}">
             <span class="font-bold text-lg mr-2 ${textAmountColor}">
               ${t.type === 'income' ? '+' : '-'}${formatarMoeda(t.amount)}
             </span>
-            <button onclick="abrirModalEdicao('${t.id}')" class="text-slate-300 hover:text-blue-500 transition-colors p-2" title="Editar conta">
+            <button data-click="abrirModalEdicao" ${argsAttr(t.id)} class="text-slate-300 hover:text-blue-500 transition-colors p-2" title="Editar conta">
               <i data-lucide="pencil" class="w-5 h-5"></i>
             </button>
-            <button onclick="pedirConfirmacaoDelete('${t.id}')" class="text-slate-300 hover:text-rose-500 transition-colors p-2" title="Apagar conta">
+            <button data-click="pedirConfirmacaoDelete" ${argsAttr(t.id)} class="text-slate-300 hover:text-rose-500 transition-colors p-2" title="Apagar conta">
               <i data-lucide="trash-2" class="w-5 h-5"></i>
             </button>
           </div>
@@ -1238,18 +1397,18 @@ function atualizarTela() {
             <div class="flex items-center gap-2 text-sm text-slate-500 mt-1">
               <span class="flex items-center gap-1"><i data-lucide="briefcase" class="w-3 h-3"></i> ${escaparHTML(inv.category)}</span>
               <span>•</span>
-              <span>${formatarData(inv.date)}</span>
+              <span>${escaparHTML(formatarData(inv.date))}</span>
             </div>
           </div>
         </div>
-        <div class="flex items-center gap-1 sm:gap-2" id="acoes-inv-${inv.id}">
+        <div class="flex items-center gap-1 sm:gap-2" id="acoes-inv-${escaparHTML(inv.id)}">
           <span class="font-bold text-lg mr-2 text-violet-600">
             ${formatarMoeda(inv.amount)}
           </span>
-          <button onclick="abrirModalInvestimento('${inv.id}')" class="text-slate-300 hover:text-violet-500 transition-colors p-2" title="Editar investimento">
+          <button data-click="abrirModalInvestimento" ${argsAttr(inv.id)} class="text-slate-300 hover:text-violet-500 transition-colors p-2" title="Editar investimento">
             <i data-lucide="pencil" class="w-5 h-5"></i>
           </button>
-          <button onclick="pedirConfirmacaoDeleteInv('${inv.id}')" class="text-slate-300 hover:text-rose-500 transition-colors p-2" title="Apagar investimento">
+          <button data-click="pedirConfirmacaoDeleteInv" ${argsAttr(inv.id)} class="text-slate-300 hover:text-rose-500 transition-colors p-2" title="Apagar investimento">
             <i data-lucide="trash-2" class="w-5 h-5"></i>
           </button>
         </div>
@@ -1294,16 +1453,16 @@ window.abrirHistorico = () => {
       const mesesDoAno = Array.from(agrupado[ano]).sort((a, b) => a - b);
       return `
         <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-          <button onclick="toggleAnoHistorico('${ano}')" class="w-full p-4 flex justify-between items-center bg-white hover:bg-slate-50 transition-colors">
+          <button data-click="toggleAnoHistorico" ${argsAttr(ano)} class="w-full p-4 flex justify-between items-center bg-white hover:bg-slate-50 transition-colors">
             <div class="flex items-center gap-3">
               <div class="bg-emerald-100 p-2 rounded-xl text-emerald-600"><i data-lucide="folder" class="w-6 h-6"></i></div>
-              <span class="text-lg font-bold text-slate-800">Ano ${ano}</span>
+              <span class="text-lg font-bold text-slate-800">Ano ${escaparHTML(ano)}</span>
             </div>
-            <i data-lucide="chevron-down" id="icone-ano-${ano}" class="w-5 h-5 text-slate-400 transition-transform"></i>
+            <i data-lucide="chevron-down" id="icone-ano-${escaparHTML(ano)}" class="w-5 h-5 text-slate-400 transition-transform"></i>
           </button>
-          <div id="conteudo-ano-${ano}" class="hidden p-4 border-t border-slate-100 bg-slate-50">
-            <button onclick="gerarRelatorio('${ano}')" class="w-full mb-4 bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm transition-colors">
-              <i data-lucide="bar-chart-3" class="w-5 h-5 text-emerald-200"></i> Ver Relatório Anual de ${ano}
+          <div id="conteudo-ano-${escaparHTML(ano)}" class="hidden p-4 border-t border-slate-100 bg-slate-50">
+            <button data-click="gerarRelatorio" ${argsAttr(ano)} class="w-full mb-4 bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm transition-colors">
+              <i data-lucide="bar-chart-3" class="w-5 h-5 text-emerald-200"></i> Ver Relatório Anual de ${escaparHTML(ano)}
             </button>
             <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Meses registrados:</p>
             <div class="space-y-2">
@@ -1311,10 +1470,10 @@ window.abrirHistorico = () => {
                 <div class="flex items-center justify-between bg-white border border-slate-200 rounded-xl p-3 shadow-sm hover:border-emerald-200 transition-colors">
                   <span class="font-bold text-slate-700">${mesesNomes[mesIndex]}</span>
                   <div class="flex gap-2">
-                    <button onclick="gerarRelatorio('${ano}', ${mesIndex})" class="p-2 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors" title="Ver Relatório Mensal">
+                    <button data-click="gerarRelatorio" ${argsAttr(ano, mesIndex)} class="p-2 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors" title="Ver Relatório Mensal">
                       <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
                     </button>
-                    <button onclick="irParaMesHistorico(${ano}, ${mesIndex})" class="flex items-center gap-1 px-3 py-2 bg-slate-100 text-slate-700 font-medium text-sm rounded-lg hover:bg-slate-200 transition-colors">
+                    <button data-click="irParaMesHistorico" ${argsAttr(Number(ano), mesIndex)} class="flex items-center gap-1 px-3 py-2 bg-slate-100 text-slate-700 font-medium text-sm rounded-lg hover:bg-slate-200 transition-colors">
                       Ver Contas
                     </button>
                   </div>
@@ -1385,7 +1544,7 @@ window.gerarRelatorio = (anoStr, mes) => {
   const viewRelatorio = document.getElementById('view-relatorio');
 
   const btnVerContas = isMensal ? `
-    <button onclick="irParaMesHistorico(${ano}, ${mes})" class="w-full bg-slate-800 hover:bg-slate-900 text-white p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm transition-colors mb-2">
+    <button data-click="irParaMesHistorico" ${argsAttr(ano, mes)} class="w-full bg-slate-800 hover:bg-slate-900 text-white p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm transition-colors mb-2">
       <i data-lucide="list" class="w-5 h-5 text-slate-300"></i> Ver todas as contas deste mês
     </button>` : '';
 
@@ -1397,7 +1556,7 @@ window.gerarRelatorio = (anoStr, mes) => {
 
   viewRelatorio.innerHTML = `
     <div class="bg-white p-4 border-b border-slate-100 shrink-0 flex items-center justify-between">
-      <button onclick="voltarParaPastas()" class="text-slate-500 hover:text-emerald-600 flex items-center gap-1 font-medium transition-colors">
+      <button data-click="voltarParaPastas" class="text-slate-500 hover:text-emerald-600 flex items-center gap-1 font-medium transition-colors">
         <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar
       </button>
       <h4 class="font-bold text-slate-800">Resumo de ${titulo}</h4>
@@ -1551,8 +1710,9 @@ window.processarImportacao = (event) => {
         // Sanitiza antes de salvar — apenas campos permitidos
         const perfilSanitizado = {
           nome: (dados.meuPerfil.nome || '').slice(0, 100),
-          telefone: (dados.meuPerfil.telefone || '').slice(0, 30),
-          foto: dados.meuPerfil.foto || null
+          telefone: '',
+          foto: typeof dados.meuPerfil.foto === 'string' && dados.meuPerfil.foto.length <= 140000
+            && FOTO_DATA_URL.test(dados.meuPerfil.foto) ? dados.meuPerfil.foto : null
         };
         localStorage.setItem('meuPerfil', JSON.stringify(perfilSanitizado));
         meuPerfil = perfilSanitizado;
@@ -1629,7 +1789,7 @@ function inicializarNotificacoes() {
         </li>
       </ul>
       
-      <button onclick="fecharModalNotificacoes(); abrirProjecaoFluxo();" 
+      <button data-click="abrirProjecaoDaNotificacao" 
         class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5 mt-2">
         <i data-lucide="line-chart" class="w-3.5 h-3.5"></i> Testar Fluxo de Caixa
       </button>
@@ -1662,6 +1822,11 @@ window.fecharModalNotificacoes = () => {
   const panel = document.getElementById('notif-panel');
   panel.classList.add('translate-x-full');
   setTimeout(() => modal.classList.add('hidden'), 300);
+};
+
+window.abrirProjecaoDaNotificacao = () => {
+  fecharModalNotificacoes();
+  abrirProjecaoFluxo();
 };
 
 // ==========================================
@@ -1894,7 +2059,7 @@ window.calcularProjecaoFluxo = (periodo) => {
             <div class="flex items-center gap-2 text-xs text-slate-500 mt-1">
               <span>${tipoText}</span>
               <span>•</span>
-              <span>${formatarData(item.date)}</span>
+              <span>${escaparHTML(formatarData(item.date))}</span>
               <span>•</span>
               <span>${escaparHTML(item.category)}</span>
             </div>
@@ -1904,7 +2069,7 @@ window.calcularProjecaoFluxo = (periodo) => {
               ${sinal}${formatarMoeda(item.amount)}
             </span>
             ${item.pago === false ? `
-              <button onclick="confirmarPagamentoProjetado('${item.id}', ${item.isInvestimento})" 
+              <button data-click="confirmarPagamentoProjetado" ${argsAttr(item.id, item.isInvestimento)} 
                 class="text-emerald-500 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 p-2 rounded-xl transition-colors flex items-center justify-center" 
                 title="Marcar como Pago">
                 <i data-lucide="check" class="w-4 h-4"></i>

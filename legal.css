@@ -1,0 +1,143 @@
+/* Estilos das páginas legais (Privacidade, Termos, Cookies) — independentes do Tailwind */
+:root {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #1e293b;
+  --muted: #475569;
+  --border: #e2e8f0;
+  --brand: #047857;
+  --mark-bg: #fef3c7;
+  --mark-text: #78350f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #f1f5f9;
+    --muted: #cbd5e1;
+    --border: #334155;
+    --brand: #6ee7b7;
+    --mark-bg: #78350f;
+    --mark-text: #fef3c7;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.65;
+  font-size: 1rem;
+}
+
+.pular-conteudo {
+  position: absolute;
+  left: -9999px;
+}
+.pular-conteudo:focus {
+  left: 1rem;
+  top: 1rem;
+  background: var(--card);
+  color: var(--brand);
+  padding: .5rem 1rem;
+  border: 2px solid var(--brand);
+  border-radius: .5rem;
+  z-index: 10;
+}
+
+header.topo {
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+header.topo .interno {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+header.topo .marca {
+  font-weight: 700;
+  color: var(--brand);
+  text-decoration: none;
+}
+
+main {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 .25rem; }
+h2 { font-size: 1.25rem; margin: 2.25rem 0 .5rem; }
+h3 { font-size: 1.05rem; margin: 1.5rem 0 .25rem; }
+p, li { color: var(--text); }
+.atualizacao { color: var(--muted); margin-top: 0; }
+
+a { color: var(--brand); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: .95rem;
+}
+.tabela-rolagem { overflow-x: auto; }
+th, td {
+  text-align: left;
+  vertical-align: top;
+  border: 1px solid var(--border);
+  padding: .5rem .75rem;
+}
+th { background: var(--card); }
+
+mark.pendente {
+  background: var(--mark-bg);
+  color: var(--mark-text);
+  padding: 0 .25rem;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.caixa {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+}
+
+footer.rodape {
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  font-size: .9rem;
+}
+footer.rodape .interno {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem;
+}
+footer.rodape nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 .75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem 1.25rem;
+}
+footer.rodape p { color: var(--muted); margin: .25rem 0; }
+
+.sem-quebra { white-space: nowrap; }

@@ -96,7 +96,7 @@ input,
 select,
 textarea,
 label,
-[onclick],
+[data-click],
 [role="button"] {
   -webkit-app-region: no-drag;
   cursor: pointer;

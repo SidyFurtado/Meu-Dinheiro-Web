@@ -8,7 +8,7 @@
   <meta name="description"
     content="Organize suas finanças pessoais com facilidade. Controle receitas, despesas e acompanhe seus gastos por categoria.">
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; img-src 'self' data: blob: https://ui-avatars.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com; frame-src 'self' https://meu-dinheiro-6b1ab.firebaseapp.com https://accounts.google.com; connect-src 'self' wss://*.firebaseio.com https://*.googleapis.com https://*.firebaseio.com https://meu-dinheiro-6b1ab.firebaseapp.com https://apis.google.com https://accounts.google.com https://securetoken.googleapis.com;">
+    content="default-src 'self'; script-src 'self' 'sha256-QBis26t1YMBZumvxf5C9Az3dokhJcuS0/JWK+u5nves=' https://www.gstatic.com/firebasejs/ https://www.gstatic.com/recaptcha/ https://www.google.com/recaptcha/ https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com wss://*.firebaseio.com https://*.firebaseio.com https://meu-dinheiro-6b1ab.firebaseapp.com https://apis.google.com https://accounts.google.com https://www.google.com/recaptcha/; frame-src https://meu-dinheiro-6b1ab.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 
   <!-- Tailwind CSS compilado (local, funciona offline) -->
   <link rel="stylesheet" href="tailwind-output.css">
@@ -42,7 +42,18 @@
           <label for="auth-senha" class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
           <input type="password" id="auth-senha" required placeholder="••••••••" maxlength="128" autocomplete="current-password" class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800">
         </div>
-        
+
+        <!-- CONSENTIMENTO (visível apenas no modo "Criar conta") -->
+        <div id="auth-consentimento" class="hidden flex items-start gap-2">
+          <input type="checkbox" id="auth-aceite"
+            class="mt-1 w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 cursor-pointer">
+          <label for="auth-aceite" class="text-sm text-slate-700">
+            Li e aceito os <a href="termos.html" target="_blank" rel="noopener" class="text-emerald-700 font-semibold underline">Termos de Uso</a>
+            e declaro ter lido a <a href="privacidade.html" target="_blank" rel="noopener" class="text-emerald-700 font-semibold underline">Política de Privacidade</a>.
+            Tenho 18 anos ou mais.
+          </label>
+        </div>
+
         <button type="submit" id="btn-auth-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-4 transition-colors shadow-md flex items-center justify-center gap-2">
           <i data-lucide="log-in" class="w-5 h-5"></i> <span id="btn-auth-text">Entrar</span>
         </button>
@@ -60,7 +71,7 @@
 
       <!-- Botões Sociais -->
       <div class="space-y-3">
-        <button type="button" onclick="window.fazerLoginGoogle()" class="w-full bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl py-3 border border-slate-200 transition-colors shadow-sm flex items-center justify-center gap-3">
+        <button type="button" data-click="fazerLoginGoogle" class="w-full bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl py-3 border border-slate-200 transition-colors shadow-sm flex items-center justify-center gap-3">
           <svg class="w-5 h-5" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -69,16 +80,34 @@
           </svg>
           Google
         </button>
+        <p class="text-xs text-slate-600 text-center">
+          Ao continuar com o Google, você aceita os <a href="termos.html" target="_blank" rel="noopener" class="underline text-emerald-700">Termos de Uso</a>,
+          declara ter lido a <a href="privacidade.html" target="_blank" rel="noopener" class="underline text-emerald-700">Política de Privacidade</a>
+          e confirma ter 18 anos ou mais.
+        </p>
 
       </div>
 
       <div class="mt-6 text-center">
         <p class="text-sm text-slate-500">
           <span id="auth-switch-text">Não tem uma conta?</span>
-          <button type="button" onclick="window.alternarModoAuth()" class="text-emerald-600 font-bold hover:underline ml-1" id="btn-auth-switch">Criar conta</button>
+          <button type="button" data-click="alternarModoAuth" class="text-emerald-600 font-bold hover:underline ml-1" id="btn-auth-switch">Criar conta</button>
         </p>
       </div>
     </div>
+
+    <!-- RODAPÉ LEGAL (tela de login) -->
+    <footer class="mt-6 max-w-md w-full text-center text-xs text-slate-600 space-y-1">
+      <nav aria-label="Documentos legais">
+        <ul class="flex flex-wrap justify-center gap-x-4 gap-y-1">
+          <li><a href="privacidade.html" class="underline hover:text-emerald-700">Política de Privacidade</a></li>
+          <li><a href="termos.html" class="underline hover:text-emerald-700">Termos de Uso</a></li>
+          <li><a href="cookies.html" class="underline hover:text-emerald-700">Política de Cookies</a></li>
+        </ul>
+      </nav>
+      <p>68.577.130 SILDYSON VICTOR DE ARAUJO FURTADO · <span class="whitespace-nowrap">CNPJ 68.577.130/0001-25</span></p>
+      <p>Contato: <a href="mailto:sidycontato.f@gmail.com" class="underline hover:text-emerald-700">sidycontato.f@gmail.com</a></p>
+    </footer>
   </div>
 
   <!-- APP PRINCIPAL -->
@@ -90,8 +119,8 @@
         <div class="flex justify-between items-center mb-4">
           <!-- PERFIL DO USUÁRIO -->
           <div class="flex items-center gap-3 cursor-pointer hover:bg-white/10 p-2 rounded-xl transition-colors"
-            onclick="abrirModalPerfil()">
-            <img id="avatar-header" src="https://ui-avatars.com/api/?name=User&background=10b981&color=fff"
+            data-click="abrirModalPerfil">
+            <img id="avatar-header" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%2310b981'/%3E%3C/svg%3E"
               class="w-10 h-10 rounded-full border-2 border-emerald-300 object-cover shadow-sm" alt="Avatar do usuário">
             <div>
               <p class="text-xs text-emerald-200 font-medium">Bem-vindo(a),</p>
@@ -107,7 +136,7 @@
           </div>
           <div class="flex gap-3">
             <!-- NOTIFICAÇÕES -->
-            <button onclick="abrirModalNotificacoes()"
+            <button data-click="abrirModalNotificacoes"
               class="relative bg-white/20 p-3 rounded-full backdrop-blur-sm shadow-inner hover:bg-white/30 transition-colors cursor-pointer">
               <i data-lucide="bell" class="w-6 h-6 text-white"></i>
               <span id="badge-notificacao" class="absolute top-0 right-0 flex h-3 w-3 hidden">
@@ -116,7 +145,7 @@
                 <span class="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border border-white"></span>
               </span>
             </button>
-            <button onclick="abrirModalConfiguracoes()"
+            <button data-click="abrirModalConfiguracoes"
               class="bg-white/20 p-3 rounded-full backdrop-blur-sm shadow-inner hover:bg-white/30 transition-colors cursor-pointer"
               aria-label="Configura&ccedil;&otilde;es">
               <i data-lucide="settings" class="w-6 h-6 text-white"></i>
@@ -132,12 +161,12 @@
       <div class="flex flex-col gap-3">
         <!-- SELETOR DE MÊS / ANO -->
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center justify-between">
-          <button onclick="mudarMes(-1)"
+          <button data-click="mudarMes" data-args='[-1]'
             class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors flex items-center gap-1 text-sm font-medium">
             <i data-lucide="chevron-left" class="w-5 h-5"></i> Anterior
           </button>
           <h2 id="mes-ano-display" class="text-xl font-bold text-emerald-800 capitalize">Mês Ano</h2>
-          <button onclick="mudarMes(1)"
+          <button data-click="mudarMes" data-args='[1]'
             class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors flex items-center gap-1 text-sm font-medium">
             Próximo <i data-lucide="chevron-right" class="w-5 h-5"></i>
           </button>
@@ -145,12 +174,12 @@
 
         <!-- ABAS DE NAVEGAÇÃO ANALÍTICA -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button onclick="abrirHistorico()"
+          <button data-click="abrirHistorico"
             class="w-full bg-slate-800 text-white rounded-xl p-3 shadow-sm hover:bg-slate-900 transition-colors flex items-center justify-center gap-2 font-semibold">
             <i data-lucide="folder-open" class="w-5 h-5 text-emerald-400"></i>
             Histórico e Relatórios
           </button>
-          <button onclick="abrirProjecaoFluxo()"
+          <button data-click="abrirProjecaoFluxo"
             class="w-full bg-slate-800 text-white rounded-xl p-3 shadow-sm hover:bg-slate-900 transition-colors flex items-center justify-center gap-2 font-semibold">
             <i data-lucide="line-chart" class="w-5 h-5 text-emerald-400"></i>
             Projeção de Fluxo
@@ -191,15 +220,15 @@
 
       <!-- BOTÕES DE AÇÃO RÁPIDA -->
       <div class="grid grid-cols-2 gap-3">
-        <button onclick="abrirModal('income')"
+        <button data-click="abrirModal" data-args='["income"]'
           class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors border border-emerald-200 shadow-sm">
           <i data-lucide="plus" class="w-5 h-5"></i> Recebi um Dinheiro
         </button>
-        <button onclick="abrirModal('expense')"
+        <button data-click="abrirModal" data-args='["expense"]'
           class="bg-rose-100 text-rose-700 hover:bg-rose-200 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors border border-rose-200 shadow-sm">
           <i data-lucide="plus" class="w-5 h-5"></i> Fiz um Gasto
         </button>
-        <button onclick="abrirModalInvestimento()"
+        <button data-click="abrirModalInvestimento"
           class="col-span-2 bg-violet-100 text-violet-700 hover:bg-violet-200 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors border border-violet-200 shadow-sm">
           <i data-lucide="trending-up" class="w-5 h-5"></i> Fiz um Investimento
         </button>
@@ -273,6 +302,19 @@
       </div>
     </main>
 
+    <!-- RODAPÉ LEGAL (app) -->
+    <footer class="max-w-4xl mx-auto px-4 sm:px-6 pb-10 text-center text-xs text-slate-600 space-y-1">
+      <nav aria-label="Documentos legais">
+        <ul class="flex flex-wrap justify-center gap-x-4 gap-y-1">
+          <li><a href="privacidade.html" class="underline hover:text-emerald-700">Política de Privacidade</a></li>
+          <li><a href="termos.html" class="underline hover:text-emerald-700">Termos de Uso</a></li>
+          <li><a href="cookies.html" class="underline hover:text-emerald-700">Política de Cookies</a></li>
+        </ul>
+      </nav>
+      <p>68.577.130 SILDYSON VICTOR DE ARAUJO FURTADO · <span class="whitespace-nowrap">CNPJ 68.577.130/0001-25</span></p>
+      <p>Contato: <a href="mailto:sidycontato.f@gmail.com" class="underline hover:text-emerald-700">sidycontato.f@gmail.com</a></p>
+    </footer>
+
     <!-- MODAL DO HISTÓRICO EM PASTAS -->
     <div id="modal-historico" role="dialog" aria-modal="true" aria-label="Histórico de Pastas"
       class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden fade-in modal-overlay">
@@ -282,7 +324,7 @@
           <h3 class="text-xl font-bold flex items-center gap-2">
             <i data-lucide="folder-search" class="w-5 h-5 text-emerald-400"></i> Histórico de Pastas
           </h3>
-          <button onclick="fecharHistorico()"
+          <button data-click="fecharHistorico"
             class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -304,7 +346,7 @@
         <div id="modal-header"
           class="p-6 text-white flex justify-between items-center bg-emerald-600 sticky top-0 z-10 shrink-0 shadow-sm transition-colors">
           <h3 id="modal-title" class="text-xl font-bold flex items-center gap-2">Adicionar Conta</h3>
-          <button onclick="fecharModal()"
+          <button data-click="fecharModal"
             class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -314,11 +356,11 @@
           <input type="hidden" id="form-tipo" value="expense">
 
           <div class="flex gap-2 p-1 bg-slate-100 rounded-xl">
-            <button type="button" id="btn-tipo-entrada" onclick="mudarTipo('income')"
+            <button type="button" id="btn-tipo-entrada" data-click="mudarTipo" data-args='["income"]'
               class="flex-1 py-2 rounded-lg text-sm font-semibold transition-all text-slate-500 hover:bg-slate-200">
               Entrada (Recebi)
             </button>
-            <button type="button" id="btn-tipo-saida" onclick="mudarTipo('expense')"
+            <button type="button" id="btn-tipo-saida" data-click="mudarTipo" data-args='["expense"]'
               class="flex-1 py-2 rounded-lg text-sm font-semibold transition-all bg-white shadow-sm text-rose-600">
               Saída (Gastei)
             </button>
@@ -343,7 +385,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label for="form-categoria" class="block text-sm font-medium text-slate-700 mb-1">Categoria</label>
-              <select id="form-categoria" onchange="onchangeCategoria()"
+              <select id="form-categoria" data-change="onchangeCategoria"
                 class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
                 <!-- Preenchido via JS -->
               </select>
@@ -381,7 +423,7 @@
           <h3 class="text-xl font-bold flex items-center gap-2">
             <i data-lucide="user-cog" class="w-5 h-5"></i> Configurar Perfil
           </h3>
-          <button onclick="fecharModalPerfil()"
+          <button data-click="fecharModalPerfil"
             class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -391,31 +433,25 @@
           <!-- FOTO DE PERFIL -->
           <div class="flex flex-col items-center justify-center gap-3">
             <div class="relative group cursor-pointer">
-              <img id="perfil-foto-preview" src="https://ui-avatars.com/api/?name=User&background=cbd5e1&color=fff"
+              <img id="perfil-foto-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%2310b981'/%3E%3C/svg%3E"
                 class="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-sm transition-transform group-hover:scale-105"
                 alt="Foto de perfil">
               <div
                 class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <i data-lucide="camera" class="w-6 h-6 text-white"></i>
               </div>
-              <input type="file" id="perfil-foto-input" accept="image/*" onchange="carregarFoto(event)"
+              <input type="file" id="perfil-foto-input" accept="image/*" data-change="carregarFoto"
                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
             </div>
-            <p class="text-xs text-slate-500 font-medium">Toque na foto para alterar</p>
+            <p class="text-xs text-slate-500 font-medium">Foto opcional · toque para alterar</p>
           </div>
 
           <div>
-            <label for="perfil-nome" class="block text-sm font-medium text-slate-700 mb-1">Seu Nome</label>
+            <label for="perfil-nome" class="block text-sm font-medium text-slate-700 mb-1">Seu nome <span class="font-normal text-slate-600">(opcional)</span></label>
             <input type="text" id="perfil-nome" placeholder="Como quer ser chamado?" maxlength="100" autocomplete="name"
               class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800">
           </div>
 
-          <div>
-            <label for="perfil-telefone" class="block text-sm font-medium text-slate-700 mb-1">Telefone /
-              Celular</label>
-            <input type="tel" id="perfil-telefone" placeholder="(00) 00000-0000" maxlength="30" autocomplete="tel"
-              class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800">
-          </div>
 
           <button type="submit"
             class="w-full text-white font-bold rounded-xl py-4 mt-2 transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900">
@@ -434,7 +470,7 @@
           <h3 class="text-xl font-bold flex items-center gap-2">
             <i data-lucide="settings" class="w-5 h-5"></i> Configurações
           </h3>
-          <button onclick="fecharModalConfiguracoes()"
+          <button data-click="fecharModalConfiguracoes"
             class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -454,7 +490,7 @@
             </h4>
             <p class="text-xs text-slate-500 mb-4">Quando ativado, o valor positivo que sobrar de um mês será somado
               automaticamente às entradas do mês seguinte.</p>
-            <button type="button" onclick="toggleSobraAutomatica()"
+            <button type="button" data-click="toggleSobraAutomatica"
               class="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 hover:bg-slate-100 transition-colors">
               <span class="text-sm font-semibold text-slate-700">Transferir sobra para o próximo mês</span>
               <div class="flex items-center gap-2">
@@ -475,7 +511,7 @@
               <i data-lucide="moon" class="w-4 h-4 text-emerald-500"></i> Modo Escuro
             </h4>
             <p class="text-xs text-slate-500 mb-4">Alterne entre o visual clássico claro ou o tema escuro mais confortável para a visão.</p>
-            <button type="button" onclick="toggleModoEscuro()"
+            <button type="button" data-click="toggleModoEscuro"
               class="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 hover:bg-slate-100 transition-colors">
               <span class="text-sm font-semibold text-slate-700">Tema Escuro</span>
               <div class="flex items-center gap-2">
@@ -499,28 +535,55 @@
               dados financeiros.</p>
 
             <div class="flex gap-2">
-              <button type="button" onclick="fazerBackup()"
+              <button type="button" data-click="fazerBackup"
                 class="flex-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 py-3 rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-colors border border-emerald-200">
                 <i data-lucide="download-cloud" class="w-5 h-5"></i>
                 Exportar Backup
               </button>
 
-              <button type="button" onclick="acionarImportacao()"
+              <button type="button" data-click="acionarImportacao"
                 class="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 py-3 rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-colors border border-blue-200">
                 <i data-lucide="upload-cloud" class="w-5 h-5"></i>
                 Restaurar
               </button>
               <!-- Input oculto para carregar o arquivo -->
               <input type="file" id="input-importar" accept=".json" class="hidden"
-                onchange="processarImportacao(event)">
+                data-change="processarImportacao">
             </div>
           </div>
 
           <!-- BOTÃO SAIR (LOGOUT) -->
           <div class="pt-5 border-t border-slate-100">
-            <button type="button" onclick="window.fazerLogout()" class="w-full bg-rose-50 text-rose-600 hover:bg-rose-100 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors border border-rose-200">
+            <button type="button" data-click="fazerLogout" class="w-full bg-rose-50 text-rose-600 hover:bg-rose-100 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors border border-rose-200">
               <i data-lucide="log-out" class="w-4 h-4"></i> Sair da Conta
             </button>
+
+            <!-- EXCLUIR CONTA (LGPD: o titular pode apagar a conta e todos os dados) -->
+            <button type="button" id="btn-mostrar-exclusao" data-click="mostrarExclusaoConta"
+              class="w-full mt-3 text-xs text-slate-400 hover:text-rose-600 underline transition-colors">
+              Excluir minha conta
+            </button>
+            <form id="form-excluir-conta" class="hidden mt-3 p-4 rounded-xl border border-rose-200 bg-rose-50 space-y-3">
+              <p class="text-xs text-rose-700 leading-relaxed">
+                <strong>Isso não pode ser desfeito.</strong> Sua conta, todos os lançamentos, investimentos e o perfil
+                serão apagados para sempre. Se quiser guardar uma cópia, exporte o backup antes.
+              </p>
+              <div id="exclusao-senha-wrap" class="hidden">
+                <label for="exclusao-senha" class="block text-xs font-medium text-slate-700 mb-1">Confirme sua senha</label>
+                <input type="password" id="exclusao-senha" maxlength="128" autocomplete="current-password"
+                  class="w-full border-slate-200 border rounded-xl px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500">
+              </div>
+              <div class="flex gap-2">
+                <button type="button" data-click="cancelarExclusaoConta"
+                  class="flex-1 bg-white text-slate-700 border border-slate-200 py-2 rounded-xl text-sm font-bold hover:bg-slate-100 transition-colors">
+                  Cancelar
+                </button>
+                <button type="submit" id="btn-confirmar-exclusao"
+                  class="flex-1 bg-rose-600 text-white py-2 rounded-xl text-sm font-bold hover:bg-rose-700 transition-colors flex items-center justify-center gap-2">
+                  Excluir tudo
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
@@ -536,7 +599,7 @@
           <h3 id="modal-inv-title" class="text-xl font-bold flex items-center gap-2">
             <i data-lucide="trending-up" class="w-5 h-5"></i> Registrar Investimento
           </h3>
-          <button onclick="fecharModalInvestimento()"
+          <button data-click="fecharModalInvestimento"
             class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -563,7 +626,7 @@
             <div>
               <label for="inv-categoria" class="block text-sm font-medium text-slate-700 mb-1">Tipo de
                 Investimento</label>
-              <select id="inv-categoria" onchange="onchangeCategoriaInv()"
+              <select id="inv-categoria" data-change="onchangeCategoriaInv"
                 class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white text-slate-800">
                 <option value="Ações">Ações</option>
                 <option value="Tesouro Direto">Tesouro Direto</option>
@@ -604,8 +667,7 @@
   <!-- MODAL DE NOTIFICAÇÕES                           -->
   <!-- =============================================== -->
   <div id="modal-notificacoes" role="dialog" aria-modal="true" aria-labelledby="notif-title"
-    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex justify-end p-0 z-50 hidden fade-in modal-overlay"
-    onclick="if(event.target === this) fecharModalNotificacoes()">
+    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex justify-end p-0 z-50 hidden fade-in modal-overlay">
 
     <div
       class="bg-white w-full max-w-sm h-full shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300"
@@ -614,7 +676,7 @@
         <h3 id="notif-title" class="text-xl font-bold flex items-center gap-2">
           <i data-lucide="bell" class="w-5 h-5"></i> Notificações
         </h3>
-        <button onclick="fecharModalNotificacoes()"
+        <button data-click="fecharModalNotificacoes"
           class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
@@ -643,12 +705,12 @@
         </h3>
         <div class="flex items-center gap-4">
           <!-- Filtro de período -->
-          <select id="proj-periodo" onchange="selecionarPeriodoProjecao(this.value)"
+          <select id="proj-periodo"
             class="bg-slate-700 text-white border-none rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold cursor-pointer">
             <option value="mes">Fim do Mês</option>
             <option value="trimestre">Trimestre (90 dias)</option>
           </select>
-          <button onclick="fecharProjecaoFluxo()"
+          <button data-click="fecharProjecaoFluxo"
             class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -699,21 +761,25 @@
   </div>
 
 
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Bibliotecas hospedadas localmente (versões fixas — nada é baixado de CDN em tempo de execução) -->
+  <script src="vendor/chart.umd.min.js"></script>
+  <script src="vendor/lucide.min.js"></script>
 
-  <!-- Lucide Icons (CDN com SRI — Subresource Integrity) -->
-  <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"
-    integrity="sha384-ieG+IKD0d/ZPXyCBTMVAbqsQdns8QGJR/e26WMw7M4fkaI/rHcS/YIoi+ah9WGge"
-    crossorigin="anonymous"></script>
-
-  <!-- Importmap para o Firebase -->
+  <!-- Importmap do Firebase (com SRI: o navegador recusa o módulo se o arquivo do CDN mudar).
+       ⚠️ Ao alterar QUALQUER caractere deste bloco, recalcule o hash sha256 dele na CSP lá em cima. -->
   <script type="importmap">
     {
       "imports": {
-        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
-        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js",
-        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js",
+        "firebase/app-check": "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js"
+      },
+      "integrity": {
+        "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js": "sha384-cB901C0jnWultb8ZAaei2mehR8EQfJQfMBokc5Z5dc56nSWK3DgeQCJsIkE7DJg8",
+        "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js": "sha384-D9sv3kF5iLMmc0vLazG8S4gM2bVmmBw+lb+7Cn0pIpfdMOpWTVrLBLrweEmES+YZ",
+        "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js": "sha384-nAwz6HvSTJ343VaB9sqZFItIinAPkFyiRV2sk7FSMgfcNPSltnISTMD7RQz8yEBf",
+        "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js": "sha384-pefNMArk2nAgBgi/hu2GKeEihdcTEXmBJNQddTIWeCzQUgCyd0SUx0Socu8lyMVR"
       }
     }
   </script>

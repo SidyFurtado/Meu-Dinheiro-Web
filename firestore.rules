@@ -11,6 +11,11 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid != null;
     }
 
+    // Data no formato YYYY-MM-DD (o valor é exibido na tela e usado em IDs de elementos)
+    function isValidData(v) {
+      return v.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$');
+    }
+
     // Valida campos de uma transação (criação)
     function isValidTransacao() {
       let d = request.resource.data;
@@ -40,7 +45,7 @@ service cloud.firestore {
 
         // Data: string no formato YYYY-MM-DD (10 chars)
         d.date is string &&
-        d.date.size() == 10 &&
+        isValidData(d.date) &&
 
         // pago: booleano opcional (status de pago/consolidado)
         (!('pago' in d) || d.pago is bool) &&
@@ -78,7 +83,7 @@ service cloud.firestore {
         d.category.size() <= 100 &&
 
         d.date is string &&
-        d.date.size() == 10 &&
+        isValidData(d.date) &&
 
         // pago: booleano opcional
         (!('pago' in d) || d.pago is bool) &&
@@ -108,8 +113,9 @@ service cloud.firestore {
         // Telefone: string opcional, máximo 30 chars
         (!('telefone' in d) || (d.telefone is string && d.telefone.size() <= 30)) &&
 
-        // Foto: string opcional (base64), máximo 100KB (~136KB base64)
-        (!('foto' in d) || d.foto == null || (d.foto is string && d.foto.size() <= 140000)) &&
+        // Foto: string opcional, imagem JPEG/PNG/WebP em base64, máximo 100KB (~136KB base64)
+        (!('foto' in d) || d.foto == null || (d.foto is string && d.foto.size() <= 140000
+          && d.foto.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$'))) &&
 
         // sobraAutomatica: booleano opcional
         (!('sobraAutomatica' in d) || d.sobraAutomatica is bool) &&
@@ -172,8 +178,8 @@ service cloud.firestore {
                     && request.auth.uid == userId
                     && isValidPerfil(userId);
 
-      // Exclusão: não permitida via cliente (apenas via Admin SDK)
-      allow delete: if false;
+      // Exclusão: apenas o próprio usuário (opção "Excluir minha conta" — LGPD)
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
     }
 
     // =========================================================

@@ -1,9 +1,0 @@
-{
-  "version": "2.3.2",
-  "windows": "https://github.com/SidyFurtado/Meu-Dinheiro/releases/download/v2.3.2/Meu-Dinheiro-Setup-2.3.2.exe",
-  "mac": "https://github.com/SidyFurtado/Meu-Dinheiro/releases/download/v2.3.2/Meu-Dinheiro-2.3.2-universal.dmg",
-  "changelog": [
-    "Resgate de dados: restauramos automaticamente as contas, saldo e categorias de usuários que vieram da versão anterior.",
-    "O update oculto no Mac foi completamente removido; os próximos avisarão de forma explícita na tela."
-  ]
-}

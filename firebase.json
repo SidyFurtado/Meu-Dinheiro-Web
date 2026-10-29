@@ -18,7 +18,14 @@
       "task.md",
       "*.md",
       "src-styles/**",
-      "version.json"
+      "version.json",
+      "firestore.rules",
+      "instaladores/**",
+      "releases/**",
+      "dist/**",
+      "vendor/*.map",
+      "**/*.@(exe|dmg|zip|mp4|mov)",
+      "CNAME"
     ],
     "rewrites": [
       {
@@ -44,7 +51,7 @@
           },
           {
             "key": "X-XSS-Protection",
-            "value": "1; mode=block"
+            "value": "0"
           },
           {
             "key": "Referrer-Policy",
@@ -61,6 +68,14 @@
           {
             "key": "Cross-Origin-Resource-Policy",
             "value": "same-origin"
+          },
+          {
+            "key": "Content-Security-Policy",
+            "value": "frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
+          },
+          {
+            "key": "X-Permitted-Cross-Domain-Policies",
+            "value": "none"
           }
         ]
       },
@@ -74,7 +89,7 @@
         ]
       },
       {
-        "source": "index.html",
+        "source": "**/*.html",
         "headers": [
           {
             "key": "Cache-Control",

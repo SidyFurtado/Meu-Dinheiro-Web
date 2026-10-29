@@ -15,15 +15,17 @@
 //   2. Restrição de domínio no Google Cloud Console:
 //      → Acesse: console.cloud.google.com/apis/credentials
 //      → Edite a chave "Browser key (auto created by Firebase)"
-//      → Restrinja para: meu-dinheiro-6b1ab.web.app
-//                        meu-dinheiro-6b1ab.firebaseapp.com
-//      (Sem essa restrição, a chave pode ser usada em outros domínios)
+//      → Sites: meu-dinheiro-6b1ab.web.app e meu-dinheiro-6b1ab.firebaseapp.com
+//      → APIs: Identity Toolkit, Token Service, Cloud Firestore, Firebase Installations,
+//              Firebase App Check
+//      (feito em 29/10/2026; ao usar outro domínio ou API, libere lá também)
 //
 // ============================================================
 
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCUg8A4kXLfyd3uOs_DAMCL8FNmaeyxGTg",
@@ -37,6 +39,17 @@ const firebaseConfig = {
 
 // Inicializa o Firebase — apenas uma instância por sessão
 const app = initializeApp(firebaseConfig);
+
+// App Check: prova ao Firebase que a requisição veio do nosso site (bloqueia bots
+// e scripts que usam a API key fora do app). Fica desligado enquanto a chave do
+// reCAPTCHA Enterprise não for preenchida.
+const RECAPTCHA_ENTERPRISE_SITE_KEY = '6Lf4zwYuAAAAANx1HPehFT-cKJTKZ2uhc0xWABLS';
+if (RECAPTCHA_ENTERPRISE_SITE_KEY) {
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(RECAPTCHA_ENTERPRISE_SITE_KEY),
+    isTokenAutoRefreshEnabled: true
+  });
+}
 
 // Inicializa o Firestore e exporta
 const db = getFirestore(app);
