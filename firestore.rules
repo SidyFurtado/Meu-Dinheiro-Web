@@ -16,6 +16,38 @@ service cloud.firestore {
       return v.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$');
     }
 
+    // ID curto gerado pelo app (séries de lançamentos, cartões)
+    function isValidIdCurto(v) {
+      return v is string && v.matches('^[A-Za-z0-9_-]{1,40}$');
+    }
+
+    // Campos opcionais de série (recorrente/parcelado) e cartão de crédito
+    function isValidExtrasTransacao(d) {
+      return
+        (!('serieId' in d) || isValidIdCurto(d.serieId)) &&
+        (!('recorrente' in d) || d.recorrente is bool) &&
+        (!('parcela' in d) || (d.parcela is int && d.parcela >= 1 && d.parcela <= 120)) &&
+        (!('parcelas' in d) || (d.parcelas is int && d.parcelas >= 1 && d.parcelas <= 120)) &&
+        (!('cartaoId' in d) || isValidIdCurto(d.cartaoId)) &&
+        (!('dataCompra' in d) || (d.dataCompra is string && isValidData(d.dataCompra)));
+    }
+
+    // Orçamento: valor opcional por categoria de gasto
+    function isValidValorOrcamento(m, k) {
+      return !(k in m) || (m[k] is number && m[k] > 0 && m[k] <= 10000000);
+    }
+
+    function isValidOrcamentos(m) {
+      return m is map &&
+        m.keys().hasOnly(['Alimentação', 'Contas da Casa', 'Saúde', 'Transporte', 'Lazer',
+                          'Roupas/Beleza', 'Assinaturas', 'Educação', 'Outros']) &&
+        isValidValorOrcamento(m, 'Alimentação') && isValidValorOrcamento(m, 'Contas da Casa') &&
+        isValidValorOrcamento(m, 'Saúde') && isValidValorOrcamento(m, 'Transporte') &&
+        isValidValorOrcamento(m, 'Lazer') && isValidValorOrcamento(m, 'Roupas/Beleza') &&
+        isValidValorOrcamento(m, 'Assinaturas') && isValidValorOrcamento(m, 'Educação') &&
+        isValidValorOrcamento(m, 'Outros');
+    }
+
     // Valida campos de uma transação (criação)
     function isValidTransacao() {
       let d = request.resource.data;
@@ -50,8 +82,11 @@ service cloud.firestore {
         // pago: booleano opcional (status de pago/consolidado)
         (!('pago' in d) || d.pago is bool) &&
 
+        isValidExtrasTransacao(d) &&
+
         // Nenhum campo extra permitido (previne injeção de dados)
-        d.keys().hasOnly(['uid', 'type', 'description', 'amount', 'category', 'date', 'pago']);
+        d.keys().hasOnly(['uid', 'type', 'description', 'amount', 'category', 'date', 'pago',
+                          'serieId', 'recorrente', 'parcela', 'parcelas', 'cartaoId', 'dataCompra']);
     }
 
     // Valida campos de uma transação (atualização)
@@ -123,8 +158,14 @@ service cloud.firestore {
         // modoEscuro: booleano opcional
         (!('modoEscuro' in d) || d.modoEscuro is bool) &&
 
+        // Orçamento por categoria, cartões de crédito e metas de economia
+        (!('orcamentos' in d) || isValidOrcamentos(d.orcamentos)) &&
+        (!('cartoes' in d) || (d.cartoes is list && d.cartoes.size() <= 10)) &&
+        (!('metas' in d) || (d.metas is list && d.metas.size() <= 30)) &&
+
         // Apenas campos permitidos
-        d.keys().hasOnly(['nome', 'telefone', 'foto', 'sobraAutomatica', 'modoEscuro']);
+        d.keys().hasOnly(['nome', 'telefone', 'foto', 'sobraAutomatica', 'modoEscuro',
+                          'orcamentos', 'cartoes', 'metas']);
     }
 
     // =========================================================

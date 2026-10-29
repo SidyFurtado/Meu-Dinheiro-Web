@@ -10,6 +10,13 @@
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self'; script-src 'self' 'sha256-QBis26t1YMBZumvxf5C9Az3dokhJcuS0/JWK+u5nves=' https://www.gstatic.com/firebasejs/ https://www.gstatic.com/recaptcha/ https://www.google.com/recaptcha/ https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com wss://*.firebaseio.com https://*.firebaseio.com https://meu-dinheiro-6b1ab.firebaseapp.com https://apis.google.com https://accounts.google.com https://www.google.com/recaptcha/; frame-src https://meu-dinheiro-6b1ab.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 
+  <!-- App instalável (PWA) -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#059669">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Meu Dinheiro">
+
   <!-- Tailwind CSS compilado (local, funciona offline) -->
   <link rel="stylesheet" href="tailwind-output.css">
 
@@ -173,19 +180,37 @@
         </div>
 
         <!-- ABAS DE NAVEGAÇÃO ANALÍTICA -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <button data-click="abrirHistorico"
-            class="w-full bg-slate-800 text-white rounded-xl p-3 shadow-sm hover:bg-slate-900 transition-colors flex items-center justify-center gap-2 font-semibold">
+            class="w-full bg-slate-800 text-white rounded-xl p-3 shadow-sm hover:bg-slate-900 transition-colors flex items-center justify-center gap-2 font-semibold text-sm">
             <i data-lucide="folder-open" class="w-5 h-5 text-emerald-400"></i>
-            Histórico e Relatórios
+            Histórico
           </button>
           <button data-click="abrirProjecaoFluxo"
-            class="w-full bg-slate-800 text-white rounded-xl p-3 shadow-sm hover:bg-slate-900 transition-colors flex items-center justify-center gap-2 font-semibold">
+            class="w-full bg-slate-800 text-white rounded-xl p-3 shadow-sm hover:bg-slate-900 transition-colors flex items-center justify-center gap-2 font-semibold text-sm">
             <i data-lucide="line-chart" class="w-5 h-5 text-emerald-400"></i>
-            Projeção de Fluxo
+            Projeção
+          </button>
+          <button data-click="abrirBusca"
+            class="w-full bg-slate-800 text-white rounded-xl p-3 shadow-sm hover:bg-slate-900 transition-colors flex items-center justify-center gap-2 font-semibold text-sm">
+            <i data-lucide="search" class="w-5 h-5 text-emerald-400"></i>
+            Buscar
+          </button>
+          <button data-click="abrirCartoes"
+            class="w-full bg-slate-800 text-white rounded-xl p-3 shadow-sm hover:bg-slate-900 transition-colors flex items-center justify-center gap-2 font-semibold text-sm">
+            <i data-lucide="credit-card" class="w-5 h-5 text-emerald-400"></i>
+            Cartões
+          </button>
+          <button data-click="abrirMetas"
+            class="col-span-2 sm:col-span-1 w-full bg-slate-800 text-white rounded-xl p-3 shadow-sm hover:bg-slate-900 transition-colors flex items-center justify-center gap-2 font-semibold text-sm">
+            <i data-lucide="target" class="w-5 h-5 text-emerald-400"></i>
+            Metas
           </button>
         </div>
       </div>
+
+      <!-- AVISO DE CONTAS VENCIDAS / A VENCER (preenchido via JS) -->
+      <div id="aviso-vencimentos" class="hidden"></div>
 
       <!-- CARTÕES DE RESUMO -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
@@ -252,14 +277,19 @@
 
         <!-- GRÁFICO DE GASTOS POR CATEGORIA -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden h-fit">
-          <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+          <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
             <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
               <i data-lucide="pie-chart" class="w-5 h-5 text-slate-400"></i> Gastos do Mês
             </h2>
+            <button data-click="abrirOrcamento"
+              class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1">
+              <i data-lucide="gauge" class="w-3.5 h-3.5"></i> Orçamento
+            </button>
           </div>
           <div id="lista-categorias" class="p-5 space-y-4">
             <!-- As categorias aparecerão aqui via JavaScript -->
           </div>
+          <div id="lista-orcamentos" class="hidden px-5 pb-5 space-y-3"></div>
         </div>
 
       </div>
@@ -399,8 +429,36 @@
             </div>
           </div>
 
+          <!-- FORMA DE PAGAMENTO (só saídas): conta ou cartão de crédito -->
+          <div id="form-pagamento-wrap">
+            <label for="form-pagamento" class="block text-sm font-medium text-slate-700 mb-1">Como pagou?</label>
+            <select id="form-pagamento"
+              class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
+              <option value="">Dinheiro, Pix ou débito</option>
+            </select>
+          </div>
+
+          <!-- REPETIÇÃO (só ao criar): recorrente todo mês ou parcelado -->
+          <div id="form-repetir-wrap" class="grid grid-cols-2 gap-4">
+            <div>
+              <label for="form-repetir" class="block text-sm font-medium text-slate-700 mb-1">Repetir</label>
+              <select id="form-repetir"
+                class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
+                <option value="nao">Não repete</option>
+                <option value="recorrente">Todo mês</option>
+                <option value="parcelado">Parcelado</option>
+              </select>
+            </div>
+            <div id="form-vezes-wrap" class="hidden">
+              <label for="form-vezes" id="form-vezes-label" class="block text-sm font-medium text-slate-700 mb-1">Quantos meses?</label>
+              <input type="number" id="form-vezes" min="2" max="60" step="1" value="12"
+                class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800" />
+            </div>
+          </div>
+          <p id="form-dica" class="hidden text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 -mt-2"></p>
+
           <!-- STATUS PAGO / PENDENTE -->
-          <div class="flex items-center gap-2 pt-2">
+          <div id="form-pago-wrap" class="flex items-center gap-2 pt-2">
             <input type="checkbox" id="form-pago" checked
               class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 cursor-pointer">
             <label for="form-pago" class="text-sm font-semibold text-slate-700 cursor-pointer select-none">Esta transação já foi paga/recebida</label>
@@ -410,6 +468,156 @@
             class="w-full text-white font-bold rounded-xl py-4 mt-4 transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700">
             <i data-lucide="save" class="w-5 h-5"></i> Confirmar e Salvar
           </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAIS: BUSCA, CARTÕES, METAS E ORÇAMENTO -->
+    <div id="modal-busca" role="dialog" aria-modal="true" aria-labelledby="busca-title"
+      class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden fade-in modal-overlay">
+      <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl zoom-in max-h-[95vh] overflow-y-auto relative flex flex-col">
+        <div class="p-6 text-white flex justify-between items-center bg-slate-800 sticky top-0 z-10 shrink-0 shadow-sm">
+          <h3 id="busca-title" class="text-xl font-bold flex items-center gap-2">
+            <i data-lucide="search" class="w-5 h-5 text-emerald-400"></i> Buscar lançamentos
+          </h3>
+          <button type="button" data-click="fecharBusca"
+            class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <form id="form-busca" class="p-5 grid grid-cols-2 sm:grid-cols-3 gap-3 border-b border-slate-100 bg-slate-50 shrink-0">
+          <div class="col-span-2 sm:col-span-3">
+            <label for="busca-texto" class="block text-xs font-medium text-slate-600 mb-1">Descrição</label>
+            <input type="search" id="busca-texto" maxlength="100" autocomplete="off" placeholder="Ex: mercado, aluguel..." class="w-full border-slate-200 border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
+          </div>
+          <div>
+            <label for="busca-tipo" class="block text-xs font-medium text-slate-600 mb-1">Tipo</label>
+            <select id="busca-tipo" class="w-full border-slate-200 border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
+              <option value="">Todos</option>
+              <option value="income">Entradas</option>
+              <option value="expense">Saídas</option>
+              <option value="investimento">Investimentos</option>
+            </select>
+          </div>
+          <div>
+            <label for="busca-categoria" class="block text-xs font-medium text-slate-600 mb-1">Categoria</label>
+            <select id="busca-categoria" class="w-full border-slate-200 border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800"><option value="">Todas</option></select>
+          </div>
+          <div>
+            <label for="busca-status" class="block text-xs font-medium text-slate-600 mb-1">Situação</label>
+            <select id="busca-status" class="w-full border-slate-200 border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
+              <option value="">Todas</option>
+              <option value="pago">Pagas</option>
+              <option value="pendente">Pendentes</option>
+            </select>
+          </div>
+          <div>
+            <label for="busca-de" class="block text-xs font-medium text-slate-600 mb-1">De</label>
+            <input type="date" id="busca-de" class="w-full border-slate-200 border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
+          </div>
+          <div>
+            <label for="busca-ate" class="block text-xs font-medium text-slate-600 mb-1">Até</label>
+            <input type="date" id="busca-ate" class="w-full border-slate-200 border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
+          </div>
+          <div>
+            <label for="busca-min" class="block text-xs font-medium text-slate-600 mb-1">Valor mínimo (R$)</label>
+            <input type="number" id="busca-min" min="0" step="0.01" class="w-full border-slate-200 border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
+          </div>
+        </form>
+        <div id="busca-resumo" class="px-5 py-3 text-sm text-slate-600 border-b border-slate-100"></div>
+        <div id="busca-resultados" class="divide-y divide-slate-100"></div>
+      </div>
+    </div>
+
+    <div id="modal-cartoes" role="dialog" aria-modal="true" aria-labelledby="cartoes-title"
+      class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden fade-in modal-overlay">
+      <div class="bg-white rounded-3xl w-full max-w-lg shadow-2xl zoom-in max-h-[95vh] overflow-y-auto relative flex flex-col">
+        <div class="p-6 text-white flex justify-between items-center bg-slate-800 sticky top-0 z-10 shrink-0 shadow-sm">
+          <h3 id="cartoes-title" class="text-xl font-bold flex items-center gap-2">
+            <i data-lucide="credit-card" class="w-5 h-5 text-emerald-400"></i> Cartões de crédito
+          </h3>
+          <button type="button" data-click="fecharCartoes"
+            class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <div class="p-5 space-y-4">
+          <div id="lista-cartoes" class="space-y-4"></div>
+          <form id="form-cartao" class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">
+            <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2"><i data-lucide="plus-circle" class="w-4 h-4 text-emerald-500"></i> Adicionar cartão</h4>
+            <div>
+              <label for="cartao-nome" class="block text-xs font-medium text-slate-600 mb-1">Nome do cartão</label>
+              <input type="text" id="cartao-nome" required maxlength="40" autocomplete="off" placeholder="Ex: Nubank, Inter..." class="w-full border-slate-200 border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="cartao-fechamento" class="block text-xs font-medium text-slate-600 mb-1">Dia que a fatura fecha</label>
+                <input type="number" id="cartao-fechamento" required min="1" max="28" step="1" placeholder="Ex: 3" class="w-full border-slate-200 border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
+              </div>
+              <div>
+                <label for="cartao-vencimento" class="block text-xs font-medium text-slate-600 mb-1">Dia do vencimento</label>
+                <input type="number" id="cartao-vencimento" required min="1" max="28" step="1" placeholder="Ex: 10" class="w-full border-slate-200 border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
+              </div>
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 text-white hover:bg-emerald-700 py-2.5 rounded-xl text-sm font-bold transition-colors">Salvar cartão</button>
+          </form>
+          <p class="text-xs text-slate-500">Ao lançar um gasto, escolha o cartão em “Como pagou?”. A compra entra na fatura certa e só pesa no saldo quando você marcar a fatura como paga.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-metas" role="dialog" aria-modal="true" aria-labelledby="metas-title"
+      class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden fade-in modal-overlay">
+      <div class="bg-white rounded-3xl w-full max-w-lg shadow-2xl zoom-in max-h-[95vh] overflow-y-auto relative flex flex-col">
+        <div class="p-6 text-white flex justify-between items-center bg-slate-800 sticky top-0 z-10 shrink-0 shadow-sm">
+          <h3 id="metas-title" class="text-xl font-bold flex items-center gap-2">
+            <i data-lucide="target" class="w-5 h-5 text-emerald-400"></i> Metas de economia
+          </h3>
+          <button type="button" data-click="fecharMetas"
+            class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <div class="p-5 space-y-4">
+          <div id="lista-metas" class="space-y-4"></div>
+          <form id="form-meta" class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">
+            <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2"><i data-lucide="plus-circle" class="w-4 h-4 text-emerald-500"></i> Nova meta</h4>
+            <div>
+              <label for="meta-nome" class="block text-xs font-medium text-slate-600 mb-1">Para quê?</label>
+              <input type="text" id="meta-nome" required maxlength="60" autocomplete="off" placeholder="Ex: Viagem, reserva de emergência..." class="w-full border-slate-200 border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="meta-alvo" class="block text-xs font-medium text-slate-600 mb-1">Quanto quer juntar (R$)</label>
+                <input type="number" id="meta-alvo" required min="1" max="10000000" step="0.01" class="w-full border-slate-200 border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
+              </div>
+              <div>
+                <label for="meta-prazo" class="block text-xs font-medium text-slate-600 mb-1">Até quando (opcional)</label>
+                <input type="month" id="meta-prazo" class="w-full border-slate-200 border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
+              </div>
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 text-white hover:bg-emerald-700 py-2.5 rounded-xl text-sm font-bold transition-colors">Criar meta</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-orcamento" role="dialog" aria-modal="true" aria-labelledby="orcamento-title"
+      class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden fade-in modal-overlay">
+      <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl zoom-in max-h-[95vh] overflow-y-auto relative flex flex-col">
+        <div class="p-6 text-white flex justify-between items-center bg-slate-800 sticky top-0 z-10 shrink-0 shadow-sm">
+          <h3 id="orcamento-title" class="text-xl font-bold flex items-center gap-2">
+            <i data-lucide="gauge" class="w-5 h-5 text-emerald-400"></i> Orçamento mensal
+          </h3>
+          <button type="button" data-click="fecharOrcamento"
+            class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <form id="form-orcamento" class="p-5 space-y-4">
+          <p class="text-xs text-slate-500">Defina quanto quer gastar por mês em cada categoria. Deixe em branco para não acompanhar. Você recebe um aviso ao chegar a 80% e ao passar do limite.</p>
+          <div id="campos-orcamento" class="space-y-2"></div>
+          <button type="submit" class="w-full bg-emerald-600 text-white hover:bg-emerald-700 py-3 rounded-xl text-sm font-bold transition-colors">Salvar orçamento</button>
         </form>
       </div>
     </div>
@@ -523,6 +731,18 @@
                     style="transform: translateX(0px);"></span>
                 </div>
               </div>
+            </button>
+          </div>
+
+          <!-- INSTALAR APP (PWA) -->
+          <div id="secao-instalar" class="hidden pt-5 border-t border-slate-100">
+            <h4 class="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
+              <i data-lucide="smartphone" class="w-4 h-4 text-emerald-500"></i> Instalar o app
+            </h4>
+            <p id="instalar-texto" class="text-xs text-slate-500 mb-3">Coloque o Meu Dinheiro na tela inicial e abra como um aplicativo.</p>
+            <button type="button" id="btn-instalar" data-click="instalarApp"
+              class="hidden w-full bg-emerald-600 text-white hover:bg-emerald-700 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors">
+              <i data-lucide="download" class="w-4 h-4"></i> Instalar agora
             </button>
           </div>
 
