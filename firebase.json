@@ -14,11 +14,10 @@
       "firebase-debug.log",
       "firestore-debug.log",
       "test-*.js",
-      "download.html",
+      "docs/**",
       "task.md",
       "*.md",
-      "src-styles/**",
-      "version.json"
+      "src/styles/input.css"
     ],
     "rewrites": [
       {
@@ -61,6 +60,10 @@
           {
             "key": "Cross-Origin-Resource-Policy",
             "value": "same-origin"
+          },
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data: blob: https://ui-avatars.com; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdn.jsdelivr.net/npm/chart.js@4.4.3/ https://cdn.jsdelivr.net/npm/lucide@0.460.0/ https://www.gstatic.com/firebasejs/10.12.2/ https://apis.google.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; frame-src 'self' https://meu-dinheiro-6b1ab.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; connect-src 'self' wss://*.firebaseio.com https://*.googleapis.com https://*.firebaseio.com https://meu-dinheiro-6b1ab.firebaseapp.com https://apis.google.com https://accounts.google.com https://securetoken.googleapis.com https://www.google.com/recaptcha/;"
           }
         ]
       },

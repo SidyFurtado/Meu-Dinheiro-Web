@@ -12,18 +12,26 @@
 //      autenticação, propriedade dos dados, tipos e limites
 //      em CADA operação no servidor.
 //
-//   2. Restrição de domínio no Google Cloud Console:
+//   2. Restrição de domínio e API no Google Cloud Console:
 //      → Acesse: console.cloud.google.com/apis/credentials
 //      → Edite a chave "Browser key (auto created by Firebase)"
-//      → Restrinja para: meu-dinheiro-6b1ab.web.app
-//                        meu-dinheiro-6b1ab.firebaseapp.com
-//      (Sem essa restrição, a chave pode ser usada em outros domínios)
+//      → Restrinja por HTTP Referrer para:
+//          https://meu-dinheiro-6b1ab.web.app/*
+//          https://meu-dinheiro-6b1ab.firebaseapp.com/*
+//          https://meudinheiro.qd.je/*
+//      → Restrinja por API apenas para:
+//          Identity Toolkit API, Token Service API, Cloud Firestore API
+//
+//   3. Firebase App Check (Proteção contra abuso de cota/bots):
+//      → Preencha RECAPTCHA_V3_SITE_KEY abaixo após ativar o
+//        App Check no Console do Firebase.
 //
 // ============================================================
 
-import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getAuth } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCUg8A4kXLfyd3uOs_DAMCL8FNmaeyxGTg",
@@ -35,8 +43,22 @@ const firebaseConfig = {
   measurementId: "G-KYNEZ65CXE"
 };
 
+// Chave pública do reCAPTCHA v3 para o Firebase App Check (defina quando ativar no Console)
+const RECAPTCHA_V3_SITE_KEY = "";
+
 // Inicializa o Firebase — apenas uma instância por sessão
 const app = initializeApp(firebaseConfig);
+
+if (RECAPTCHA_V3_SITE_KEY) {
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(RECAPTCHA_V3_SITE_KEY),
+      isTokenAutoRefreshEnabled: true
+    });
+  } catch {
+    // Falha silenciosa caso o App Check já esteja inicializado
+  }
+}
 
 // Inicializa o Firestore e exporta
 const db = getFirestore(app);

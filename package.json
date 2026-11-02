@@ -1,9 +1,9 @@
 {
   "name": "meu-dinheiro-web",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Controle Financeiro Descomplicado — Organize suas finanças com facilidade",
   "scripts": {
-    "build:css": "npx tailwindcss -i ./src-styles/input.css -o ./tailwind-output.css --minify"
+    "build:css": "npx tailwindcss -i ./src/styles/input.css -o ./src/styles/tailwind-output.css --minify"
   },
   "author": "Meu Dinheiro",
   "license": "MIT",

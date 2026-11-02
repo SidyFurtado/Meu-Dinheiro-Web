@@ -8,13 +8,16 @@
   <meta name="description"
     content="Organize suas finanças pessoais com facilidade. Controle receitas, despesas e acompanhe seus gastos por categoria.">
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; img-src 'self' data: blob: https://ui-avatars.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com; frame-src 'self' https://meu-dinheiro-6b1ab.firebaseapp.com https://accounts.google.com; connect-src 'self' wss://*.firebaseio.com https://*.googleapis.com https://*.firebaseio.com https://meu-dinheiro-6b1ab.firebaseapp.com https://apis.google.com https://accounts.google.com https://securetoken.googleapis.com;">
+    content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; img-src 'self' data: blob: https://ui-avatars.com; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdn.jsdelivr.net/npm/chart.js@4.4.3/ https://cdn.jsdelivr.net/npm/lucide@0.460.0/ https://www.gstatic.com/firebasejs/10.12.2/ https://apis.google.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; frame-src 'self' https://meu-dinheiro-6b1ab.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; connect-src 'self' wss://*.firebaseio.com https://*.googleapis.com https://*.firebaseio.com https://meu-dinheiro-6b1ab.firebaseapp.com https://apis.google.com https://accounts.google.com https://securetoken.googleapis.com https://www.google.com/recaptcha/;">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/icon.png">
 
   <!-- Tailwind CSS compilado (local, funciona offline) -->
-  <link rel="stylesheet" href="tailwind-output.css">
+  <link rel="stylesheet" href="src/styles/tailwind-output.css">
 
   <!-- Estilos customizados -->
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="src/styles/style.css">
 </head>
 
 <body class="min-h-screen bg-slate-50 font-sans text-slate-800">
@@ -39,8 +42,11 @@
           <input type="email" id="auth-email" required placeholder="seu@email.com" maxlength="254" autocomplete="email" class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800">
         </div>
         <div>
-          <label for="auth-senha" class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
-          <input type="password" id="auth-senha" required placeholder="••••••••" maxlength="128" autocomplete="current-password" class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800">
+          <div class="flex justify-between items-center mb-1">
+            <label for="auth-senha" class="block text-sm font-medium text-slate-700">Senha</label>
+            <button type="button" id="btn-recuperar-senha" class="text-xs text-emerald-600 hover:underline font-medium">Esqueci minha senha</button>
+          </div>
+          <input type="password" id="auth-senha" required placeholder="••••••••" minlength="6" maxlength="128" autocomplete="current-password" class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800">
         </div>
         
         <button type="submit" id="btn-auth-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-4 transition-colors shadow-md flex items-center justify-center gap-2">
@@ -60,7 +66,7 @@
 
       <!-- Botões Sociais -->
       <div class="space-y-3">
-        <button type="button" onclick="window.fazerLoginGoogle()" class="w-full bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl py-3 border border-slate-200 transition-colors shadow-sm flex items-center justify-center gap-3">
+        <button type="button" id="btn-login-google" class="w-full bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl py-3 border border-slate-200 transition-colors shadow-sm flex items-center justify-center gap-3">
           <svg class="w-5 h-5" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -75,7 +81,7 @@
       <div class="mt-6 text-center">
         <p class="text-sm text-slate-500">
           <span id="auth-switch-text">Não tem uma conta?</span>
-          <button type="button" onclick="window.alternarModoAuth()" class="text-emerald-600 font-bold hover:underline ml-1" id="btn-auth-switch">Criar conta</button>
+          <button type="button" class="text-emerald-600 font-bold hover:underline ml-1" id="btn-auth-switch">Criar conta</button>
         </p>
       </div>
     </div>
@@ -89,8 +95,7 @@
       <div class="max-w-4xl mx-auto">
         <div class="flex justify-between items-center mb-4">
           <!-- PERFIL DO USUÁRIO -->
-          <div class="flex items-center gap-3 cursor-pointer hover:bg-white/10 p-2 rounded-xl transition-colors"
-            onclick="abrirModalPerfil()">
+          <div id="btn-abrir-perfil" class="flex items-center gap-3 cursor-pointer hover:bg-white/10 p-2 rounded-xl transition-colors">
             <img id="avatar-header" src="https://ui-avatars.com/api/?name=User&background=10b981&color=fff"
               class="w-10 h-10 rounded-full border-2 border-emerald-300 object-cover shadow-sm" alt="Avatar do usuário">
             <div>
@@ -107,7 +112,7 @@
           </div>
           <div class="flex gap-3">
             <!-- NOTIFICAÇÕES -->
-            <button onclick="abrirModalNotificacoes()"
+            <button id="btn-abrir-notificacoes"
               class="relative bg-white/20 p-3 rounded-full backdrop-blur-sm shadow-inner hover:bg-white/30 transition-colors cursor-pointer">
               <i data-lucide="bell" class="w-6 h-6 text-white"></i>
               <span id="badge-notificacao" class="absolute top-0 right-0 flex h-3 w-3 hidden">
@@ -116,7 +121,7 @@
                 <span class="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border border-white"></span>
               </span>
             </button>
-            <button onclick="abrirModalConfiguracoes()"
+            <button id="btn-abrir-configuracoes"
               class="bg-white/20 p-3 rounded-full backdrop-blur-sm shadow-inner hover:bg-white/30 transition-colors cursor-pointer"
               aria-label="Configura&ccedil;&otilde;es">
               <i data-lucide="settings" class="w-6 h-6 text-white"></i>
@@ -132,12 +137,12 @@
       <div class="flex flex-col gap-3">
         <!-- SELETOR DE MÊS / ANO -->
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center justify-between">
-          <button onclick="mudarMes(-1)"
+          <button id="btn-mes-anterior"
             class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors flex items-center gap-1 text-sm font-medium">
             <i data-lucide="chevron-left" class="w-5 h-5"></i> Anterior
           </button>
           <h2 id="mes-ano-display" class="text-xl font-bold text-emerald-800 capitalize">Mês Ano</h2>
-          <button onclick="mudarMes(1)"
+          <button id="btn-mes-proximo"
             class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors flex items-center gap-1 text-sm font-medium">
             Próximo <i data-lucide="chevron-right" class="w-5 h-5"></i>
           </button>
@@ -145,12 +150,12 @@
 
         <!-- ABAS DE NAVEGAÇÃO ANALÍTICA -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button onclick="abrirHistorico()"
+          <button id="btn-abrir-historico"
             class="w-full bg-slate-800 text-white rounded-xl p-3 shadow-sm hover:bg-slate-900 transition-colors flex items-center justify-center gap-2 font-semibold">
             <i data-lucide="folder-open" class="w-5 h-5 text-emerald-400"></i>
             Histórico e Relatórios
           </button>
-          <button onclick="abrirProjecaoFluxo()"
+          <button id="btn-abrir-projecao"
             class="w-full bg-slate-800 text-white rounded-xl p-3 shadow-sm hover:bg-slate-900 transition-colors flex items-center justify-center gap-2 font-semibold">
             <i data-lucide="line-chart" class="w-5 h-5 text-emerald-400"></i>
             Projeção de Fluxo
@@ -191,15 +196,15 @@
 
       <!-- BOTÕES DE AÇÃO RÁPIDA -->
       <div class="grid grid-cols-2 gap-3">
-        <button onclick="abrirModal('income')"
+        <button id="btn-nova-entrada"
           class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors border border-emerald-200 shadow-sm">
           <i data-lucide="plus" class="w-5 h-5"></i> Recebi um Dinheiro
         </button>
-        <button onclick="abrirModal('expense')"
+        <button id="btn-nova-saida"
           class="bg-rose-100 text-rose-700 hover:bg-rose-200 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors border border-rose-200 shadow-sm">
           <i data-lucide="plus" class="w-5 h-5"></i> Fiz um Gasto
         </button>
-        <button onclick="abrirModalInvestimento()"
+        <button id="btn-novo-investimento"
           class="col-span-2 bg-violet-100 text-violet-700 hover:bg-violet-200 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors border border-violet-200 shadow-sm">
           <i data-lucide="trending-up" class="w-5 h-5"></i> Fiz um Investimento
         </button>
@@ -211,10 +216,25 @@
 
         <!-- LISTA DE TRANSAÇÕES (receitas e gastos) -->
         <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+          <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex flex-wrap justify-between items-center gap-3">
             <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
               <i data-lucide="calendar" class="w-5 h-5 text-slate-400"></i> Histórico do Mês
             </h2>
+            <div id="controles-selecao-transacoes" class="hidden items-center gap-2 sm:gap-3 flex-wrap">
+              <label for="check-all-transacoes" class="flex items-center gap-1.5 text-xs font-semibold text-slate-600 cursor-pointer select-none hover:text-slate-800 transition-colors">
+                <input type="checkbox" id="check-all-transacoes" class="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+                <span>Selecionar tudo</span>
+              </label>
+              <button type="button" id="btn-apagar-mes-transacoes"
+                class="text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Limpar mês
+              </button>
+              <button type="button" id="btn-apagar-transacoes-sel"
+                class="hidden bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors shadow-sm flex items-center gap-1.5">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                <span id="txt-apagar-transacoes-sel">Apagar (0)</span>
+              </button>
+            </div>
           </div>
           <div id="lista-transacoes" class="divide-y divide-slate-100 min-h-[200px]">
             <!-- As transações aparecerão aqui via JavaScript -->
@@ -260,10 +280,25 @@
 
           <!-- Lista de investimentos do mês -->
           <div class="lg:col-span-2 border-t lg:border-t-0 border-slate-100">
-            <div class="p-4 bg-slate-50/50 border-b border-slate-100">
+            <div class="p-4 bg-slate-50/50 border-b border-slate-100 flex flex-wrap justify-between items-center gap-3">
               <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
                 <i data-lucide="list" class="w-4 h-4"></i> Histórico de Investimentos
               </h3>
+              <div id="controles-selecao-investimentos" class="hidden items-center gap-2 sm:gap-3 flex-wrap">
+                <label for="check-all-investimentos" class="flex items-center gap-1.5 text-xs font-semibold text-slate-600 cursor-pointer select-none hover:text-slate-800 transition-colors">
+                  <input type="checkbox" id="check-all-investimentos" class="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500 cursor-pointer">
+                  <span>Selecionar tudo</span>
+                </label>
+                <button type="button" id="btn-apagar-mes-investimentos"
+                  class="text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Limpar mês
+                </button>
+                <button type="button" id="btn-apagar-investimentos-sel"
+                  class="hidden bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors shadow-sm flex items-center gap-1.5">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  <span id="txt-apagar-investimentos-sel">Apagar (0)</span>
+                </button>
+              </div>
             </div>
             <div id="lista-investimentos" class="divide-y divide-slate-100 min-h-[100px]">
               <!-- Investimentos aparecerão aqui via JavaScript -->
@@ -282,7 +317,7 @@
           <h3 class="text-xl font-bold flex items-center gap-2">
             <i data-lucide="folder-search" class="w-5 h-5 text-emerald-400"></i> Histórico de Pastas
           </h3>
-          <button onclick="fecharHistorico()"
+          <button id="btn-fechar-historico"
             class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -304,7 +339,7 @@
         <div id="modal-header"
           class="p-6 text-white flex justify-between items-center bg-emerald-600 sticky top-0 z-10 shrink-0 shadow-sm transition-colors">
           <h3 id="modal-title" class="text-xl font-bold flex items-center gap-2">Adicionar Conta</h3>
-          <button onclick="fecharModal()"
+          <button id="btn-fechar-cadastro"
             class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -314,11 +349,11 @@
           <input type="hidden" id="form-tipo" value="expense">
 
           <div class="flex gap-2 p-1 bg-slate-100 rounded-xl">
-            <button type="button" id="btn-tipo-entrada" onclick="mudarTipo('income')"
+            <button type="button" id="btn-tipo-entrada"
               class="flex-1 py-2 rounded-lg text-sm font-semibold transition-all text-slate-500 hover:bg-slate-200">
               Entrada (Recebi)
             </button>
-            <button type="button" id="btn-tipo-saida" onclick="mudarTipo('expense')"
+            <button type="button" id="btn-tipo-saida"
               class="flex-1 py-2 rounded-lg text-sm font-semibold transition-all bg-white shadow-sm text-rose-600">
               Saída (Gastei)
             </button>
@@ -335,7 +370,7 @@
             <label for="form-valor" class="block text-sm font-medium text-slate-700 mb-1">Qual o valor? (R$)</label>
             <div class="relative">
               <span class="absolute left-4 top-3 text-slate-400">R$</span>
-              <input type="number" id="form-valor" required step="0.01" min="0.01" placeholder="0,00"
+              <input type="number" id="form-valor" required step="0.01" min="0.01" max="10000000" placeholder="0,00"
                 class="w-full border-slate-200 border rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 font-medium text-lg" />
             </div>
           </div>
@@ -343,7 +378,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label for="form-categoria" class="block text-sm font-medium text-slate-700 mb-1">Categoria</label>
-              <select id="form-categoria" onchange="onchangeCategoria()"
+              <select id="form-categoria"
                 class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800">
                 <!-- Preenchido via JS -->
               </select>
@@ -381,7 +416,7 @@
           <h3 class="text-xl font-bold flex items-center gap-2">
             <i data-lucide="user-cog" class="w-5 h-5"></i> Configurar Perfil
           </h3>
-          <button onclick="fecharModalPerfil()"
+          <button id="btn-fechar-perfil"
             class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -398,7 +433,7 @@
                 class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <i data-lucide="camera" class="w-6 h-6 text-white"></i>
               </div>
-              <input type="file" id="perfil-foto-input" accept="image/*" onchange="carregarFoto(event)"
+              <input type="file" id="perfil-foto-input" accept="image/jpeg,image/png,image/webp"
                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
             </div>
             <p class="text-xs text-slate-500 font-medium">Toque na foto para alterar</p>
@@ -434,7 +469,7 @@
           <h3 class="text-xl font-bold flex items-center gap-2">
             <i data-lucide="settings" class="w-5 h-5"></i> Configurações
           </h3>
-          <button onclick="fecharModalConfiguracoes()"
+          <button id="btn-fechar-configuracoes"
             class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -444,7 +479,7 @@
           <!-- INFORMAÇÕES DA VERSÃO -->
           <div class="text-center pt-2">
             <p class="text-xs text-slate-400 font-medium">Meu Dinheiro Web</p>
-            <p class="text-[10px] text-slate-400 mt-0.5">Versão 3.0.0 (Sincronizado na Nuvem)</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Versão 3.1.0 (Sincronizado na Nuvem)</p>
           </div>
 
           <!-- SOBRA AUTOMÁTICA -->
@@ -454,7 +489,7 @@
             </h4>
             <p class="text-xs text-slate-500 mb-4">Quando ativado, o valor positivo que sobrar de um mês será somado
               automaticamente às entradas do mês seguinte.</p>
-            <button type="button" onclick="toggleSobraAutomatica()"
+            <button type="button" id="btn-toggle-sobra"
               class="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 hover:bg-slate-100 transition-colors">
               <span class="text-sm font-semibold text-slate-700">Transferir sobra para o próximo mês</span>
               <div class="flex items-center gap-2">
@@ -475,7 +510,7 @@
               <i data-lucide="moon" class="w-4 h-4 text-emerald-500"></i> Modo Escuro
             </h4>
             <p class="text-xs text-slate-500 mb-4">Alterne entre o visual clássico claro ou o tema escuro mais confortável para a visão.</p>
-            <button type="button" onclick="toggleModoEscuro()"
+            <button type="button" id="btn-toggle-modo-escuro"
               class="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 hover:bg-slate-100 transition-colors">
               <span class="text-sm font-semibold text-slate-700">Tema Escuro</span>
               <div class="flex items-center gap-2">
@@ -499,26 +534,31 @@
               dados financeiros.</p>
 
             <div class="flex gap-2">
-              <button type="button" onclick="fazerBackup()"
+              <button type="button" id="btn-exportar-backup"
                 class="flex-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 py-3 rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-colors border border-emerald-200">
                 <i data-lucide="download-cloud" class="w-5 h-5"></i>
                 Exportar Backup
               </button>
 
-              <button type="button" onclick="acionarImportacao()"
+              <button type="button" id="btn-importar-backup"
                 class="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 py-3 rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-colors border border-blue-200">
                 <i data-lucide="upload-cloud" class="w-5 h-5"></i>
                 Restaurar
               </button>
               <!-- Input oculto para carregar o arquivo -->
-              <input type="file" id="input-importar" accept=".json" class="hidden"
-                onchange="processarImportacao(event)">
+              <input type="file" id="input-importar" accept=".json" class="hidden">
             </div>
+
+            <button type="button" id="btn-apagar-tudo-conta"
+              class="w-full mt-3 bg-rose-50 text-rose-700 hover:bg-rose-100 py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-rose-200">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+              Apagar todos os lançamentos da conta
+            </button>
           </div>
 
           <!-- BOTÃO SAIR (LOGOUT) -->
           <div class="pt-5 border-t border-slate-100">
-            <button type="button" onclick="window.fazerLogout()" class="w-full bg-rose-50 text-rose-600 hover:bg-rose-100 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors border border-rose-200">
+            <button type="button" id="btn-logout" class="w-full bg-rose-50 text-rose-600 hover:bg-rose-100 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors border border-rose-200">
               <i data-lucide="log-out" class="w-4 h-4"></i> Sair da Conta
             </button>
           </div>
@@ -536,7 +576,7 @@
           <h3 id="modal-inv-title" class="text-xl font-bold flex items-center gap-2">
             <i data-lucide="trending-up" class="w-5 h-5"></i> Registrar Investimento
           </h3>
-          <button onclick="fecharModalInvestimento()"
+          <button id="btn-fechar-investimento"
             class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -554,7 +594,7 @@
             <label for="inv-valor" class="block text-sm font-medium text-slate-700 mb-1">Valor Investido (R$)</label>
             <div class="relative">
               <span class="absolute left-4 top-3 text-slate-400">R$</span>
-              <input type="number" id="inv-valor" required step="0.01" min="0.01" placeholder="0,00"
+              <input type="number" id="inv-valor" required step="0.01" min="0.01" max="10000000" placeholder="0,00"
                 class="w-full border-slate-200 border rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-800 font-medium text-lg" />
             </div>
           </div>
@@ -563,7 +603,7 @@
             <div>
               <label for="inv-categoria" class="block text-sm font-medium text-slate-700 mb-1">Tipo de
                 Investimento</label>
-              <select id="inv-categoria" onchange="onchangeCategoriaInv()"
+              <select id="inv-categoria"
                 class="w-full border-slate-200 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white text-slate-800">
                 <option value="Ações">Ações</option>
                 <option value="Tesouro Direto">Tesouro Direto</option>
@@ -604,8 +644,7 @@
   <!-- MODAL DE NOTIFICAÇÕES                           -->
   <!-- =============================================== -->
   <div id="modal-notificacoes" role="dialog" aria-modal="true" aria-labelledby="notif-title"
-    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex justify-end p-0 z-50 hidden fade-in modal-overlay"
-    onclick="if(event.target === this) fecharModalNotificacoes()">
+    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex justify-end p-0 z-50 hidden fade-in modal-overlay">
 
     <div
       class="bg-white w-full max-w-sm h-full shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300"
@@ -614,7 +653,7 @@
         <h3 id="notif-title" class="text-xl font-bold flex items-center gap-2">
           <i data-lucide="bell" class="w-5 h-5"></i> Notificações
         </h3>
-        <button onclick="fecharModalNotificacoes()"
+        <button id="btn-fechar-notificacoes"
           class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
@@ -643,12 +682,12 @@
         </h3>
         <div class="flex items-center gap-4">
           <!-- Filtro de período -->
-          <select id="proj-periodo" onchange="selecionarPeriodoProjecao(this.value)"
+          <select id="proj-periodo"
             class="bg-slate-700 text-white border-none rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold cursor-pointer">
             <option value="mes">Fim do Mês</option>
             <option value="trimestre">Trimestre (90 dias)</option>
           </select>
-          <button onclick="fecharProjecaoFluxo()"
+          <button id="btn-fechar-projecao"
             class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -698,28 +737,52 @@
     </div>
   </div>
 
+  <!-- =============================================== -->
+  <!-- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO EM MASSA       -->
+  <!-- =============================================== -->
+  <div id="modal-confirmar-exclusao" role="dialog" aria-modal="true" aria-labelledby="confirmar-exclusao-titulo"
+    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden fade-in modal-overlay">
+    <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl zoom-in overflow-hidden border border-slate-100">
+      <div class="p-6 bg-rose-600 text-white flex justify-between items-center">
+        <h3 id="confirmar-exclusao-titulo" class="text-lg font-bold flex items-center gap-2">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i> Confirmar Exclusão
+        </h3>
+        <button type="button" id="btn-fechar-confirmar-exclusao"
+          class="text-white/80 hover:text-white bg-white/10 p-2 rounded-full transition-colors" aria-label="Fechar">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-5">
+        <p id="confirmar-exclusao-msg" class="text-sm text-slate-600 leading-relaxed">
+          Tem certeza que deseja apagar os lançamentos selecionados? Esta ação não pode ser desfeita.
+        </p>
+        <div class="flex gap-3">
+          <button type="button" id="btn-cancelar-exclusao-massa"
+            class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition-colors">
+            Cancelar
+          </button>
+          <button type="button" id="btn-confirmar-exclusao-massa"
+            class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl text-sm transition-colors shadow-sm flex items-center justify-center gap-2">
+            <i data-lucide="trash-2" class="w-4 h-4"></i> Sim, apagar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Chart.js CDN (Versão fixa com SRI — Subresource Integrity) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"
+    integrity="sha384-JUh163oCRItcbPme8pYnROHQMC6fNKTBWtRG3I3I0erJkzNgL7uxKlNwcrcFKeqF"
+    crossorigin="anonymous"></script>
 
   <!-- Lucide Icons (CDN com SRI — Subresource Integrity) -->
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"
     integrity="sha384-ieG+IKD0d/ZPXyCBTMVAbqsQdns8QGJR/e26WMw7M4fkaI/rHcS/YIoi+ah9WGge"
     crossorigin="anonymous"></script>
 
-  <!-- Importmap para o Firebase -->
-  <script type="importmap">
-    {
-      "imports": {
-        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
-        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js",
-        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
-      }
-    }
-  </script>
-
   <!-- SCRIPT PRINCIPAL -->
-  <script type="module" src="app.js"></script>
+  <script type="module" src="src/js/app.js"></script>
 </body>
 
 </html>

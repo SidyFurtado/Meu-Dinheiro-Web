@@ -6,6 +6,9 @@ dist/
 main.js
 preload.js
 
+# Cache local do Firebase CLI
+.firebase/
+
 # Logs e arquivos de debug — NUNCA commitar
 firebase-debug.log
 firestore-debug.log
@@ -13,9 +16,6 @@ firestore-debug.log
 
 # Arquivos de teste expostos
 test-*.js
-
-# Arquivo temporário de download grande
-download.html
 
 # Arquivos de task/planejamento interno
 task.md

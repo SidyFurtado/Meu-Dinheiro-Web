@@ -96,10 +96,18 @@ input,
 select,
 textarea,
 label,
-[onclick],
 [role="button"] {
   -webkit-app-region: no-drag;
   cursor: pointer;
+}
+
+input[type="checkbox"] {
+  accent-color: #10b981;
+}
+
+#check-all-investimentos,
+#lista-investimentos input[type="checkbox"] {
+  accent-color: #7c3aed;
 }
 
 /* O header é a área onde o usuário pode arrastar a janela no macOS */
@@ -228,7 +236,7 @@ body.dark .bg-violet-100:hover {
 
 /* Efeito Hover nas listas */
 body.dark .hover\:bg-slate-50:hover,
-body.dark .group:hover {
+body.dark .divide-y > .group:hover {
   background-color: #1e293b !important;
 }
 
@@ -257,19 +265,41 @@ body.dark .bg-violet-100.text-violet-600 {
   color: #c084fc !important;
 }
 
+body.dark .bg-amber-100 {
+  background-color: rgba(245, 158, 11, 0.18) !important;
+  color: #fbbf24 !important;
+}
+
+body.dark .text-amber-800 {
+  color: #fbbf24 !important;
+}
+
+body.dark .bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.18) !important;
+  color: #60a5fa !important;
+}
+
+body.dark .text-blue-800 {
+  color: #60a5fa !important;
+}
+
+body.dark .text-rose-800 {
+  color: #fda4af !important;
+}
+
 body.dark .bg-slate-100.rounded-full {
   background-color: #1e293b !important; /* trilha da barra de progresso */
 }
 
 /* Inputs e Elementos de Formulário */
-body.dark input,
+body.dark input:not([type="checkbox"]):not([type="file"]),
 body.dark select,
 body.dark textarea {
   background-color: #0b0f19 !important;
   color: #f8fafc !important;
   border-color: #1e293b !important;
 }
-body.dark input:focus,
+body.dark input:not([type="checkbox"]):not([type="file"]):focus,
 body.dark select:focus {
   border-color: #10b981 !important;
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
@@ -279,9 +309,8 @@ body.dark input::placeholder {
   color: #475569 !important;
 }
 
-/* Cabeçalho Principal */
-body.dark header,
-body.dark .bg-emerald-600 {
+/* Cabeçalho Principal (mantém botões .bg-emerald-600 vibrantes) */
+body.dark header {
   background-color: #064e3b !important; /* Verde escuro sofisticado */
 }
 
@@ -315,6 +344,15 @@ body.dark .bg-blue-50 {
   background-color: rgba(59, 130, 246, 0.1) !important;
   color: #60a5fa !important;
   border-color: rgba(59, 130, 246, 0.2) !important;
+}
+body.dark .bg-rose-50 {
+  background-color: rgba(244, 63, 94, 0.12) !important;
+  color: #f87171 !important;
+  border-color: rgba(244, 63, 94, 0.25) !important;
+}
+body.dark .bg-violet-50 {
+  background-color: rgba(139, 92, 246, 0.12) !important;
+  border-color: rgba(139, 92, 246, 0.25) !important;
 }
 
 /* Barra lateral do Histórico (Gaveta lateral) */

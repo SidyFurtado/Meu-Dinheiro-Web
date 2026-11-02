@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download - Meu Dinheiro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #109b5a; /* Verde da identidade visual */
+            --primary-dark: #0a7a44;
+            --bg-color: #f4f6f8;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --white: #ffffff;
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Top Background similar to the app */
+        .top-bg {
+            background-color: var(--primary-color);
+            height: 40vh;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            border-bottom-left-radius: 60px;
+            border-bottom-right-radius: 60px;
+            box-shadow: 0 10px 30px rgba(16, 155, 90, 0.2);
+        }
+
+        /* Particles effect for premium feel */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 40vh;
+            overflow: hidden;
+            z-index: -1;
+            opacity: 0.4;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: float 8s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            margin-top: 8vh;
+        }
+
+        .download-card {
+            background: var(--white);
+            border-radius: 28px;
+            padding: 3.5rem 3rem;
+            width: 100%;
+            max-width: 550px;
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            z-index: 10;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .app-icon {
+            width: 88px;
+            height: 88px;
+            background: linear-gradient(135deg, #15b86a, var(--primary-color));
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            box-shadow: 0 12px 24px rgba(16, 155, 90, 0.3);
+            color: white;
+            font-size: 2.8rem;
+            transform: translateY(-50%);
+            margin-top: -3.5rem;
+            margin-bottom: -0.5rem;
+            border: 4px solid var(--white);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.5px;
+        }
+
+        p.subtitle {
+            color: var(--text-light);
+            font-size: 1.1rem;
+            margin-bottom: 2.5rem;
+            line-height: 1.5;
+        }
+
+        .download-options {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            width: 100%;
+            padding: 1.25rem;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.6s ease;
+        }
+
+        .btn:hover::after {
+            left: 100%;
+        }
+
+        .btn-windows {
+            background-color: var(--primary-color);
+            color: var(--white);
+            box-shadow: 0 8px 20px rgba(16, 155, 90, 0.25);
+        }
+
+        .btn-windows:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(16, 155, 90, 0.35);
+        }
+
+        .btn-mac {
+            background-color: #1e293b;
+            color: var(--white);
+            box-shadow: 0 8px 20px rgba(30, 41, 59, 0.25);
+        }
+
+        .btn-mac:hover {
+            background-color: #0f172a;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(30, 41, 59, 0.35);
+        }
+
+        .btn i {
+            font-size: 1.6rem;
+        }
+
+        .info-text {
+            margin-top: 2rem;
+            font-size: 0.95rem;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .info-text i {
+            color: var(--primary-color);
+        }
+
+        /* Feedback visual de download */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .spinner-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1.5rem;
+        }
+
+        .spinner {
+            width: 100%;
+            height: 100%;
+            border: 4px solid #e2e8f0;
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
+        }
+
+        .spinner-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--primary-color);
+            font-size: 1.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .loading-subtext {
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+
+        /* Features section at the bottom for balance */
+        .features {
+            display: flex;
+            gap: 3rem;
+            margin-top: 4rem;
+            animation: fadeIn 1s ease-out 0.5s both;
+        }
+
+        .feature-item {
+            text-align: center;
+            color: var(--text-light);
+            max-width: 150px;
+        }
+
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .feature-item h3 {
+            font-size: 1rem;
+            color: var(--text-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .feature-item p {
+            font-size: 0.85rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 600px) {
+            .features {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+            .top-bg {
+                border-bottom-left-radius: 30px;
+                border-bottom-right-radius: 30px;
+                height: 30vh;
+            }
+            .container {
+                padding: 1rem;
+            }
+            .download-card {
+                padding: 3rem 1.5rem 2rem;
+            }
+        }
+
+        /* Aviso para macOS */
+        .mac-notice {
+            margin-top: 1.5rem;
+            background: linear-gradient(135deg, #f8f9fa, #f1f3f5);
+            border: 1px solid #dee2e6;
+            border-left: 4px solid #1e293b;
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: left;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            animation: fadeIn 0.5s ease-out;
+        }
+        .mac-notice-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            color: #1e293b;
+        }
+        .mac-notice-header i { font-size: 1.2rem; }
+        .mac-notice p { margin: 0 0 0.5rem; line-height: 1.5; color: var(--text-light); }
+        .mac-notice ol { margin: 0; padding-left: 1.25rem; }
+        .mac-notice li { margin-bottom: 0.35rem; line-height: 1.5; color: var(--text-light); }
+
+        /* Changelog section */
+        .changelog-section {
+            margin-top: 2rem;
+            text-align: left;
+            background: linear-gradient(135deg, #f8f9fa, #f1f3f5);
+            border: 1px solid #dee2e6;
+            border-left: 4px solid var(--primary-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            animation: fadeIn 0.5s ease-out;
+        }
+        .changelog-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            color: #1e293b;
+        }
+        .changelog-header i { color: var(--primary-color); font-size: 1.2rem; }
+        .changelog-section ul { margin: 0; padding-left: 1.25rem; }
+        .changelog-section li { margin-bottom: 0.35rem; font-size: 0.9rem; line-height: 1.5; color: var(--text-light); }
+
+    </style>
+</head>
+<body><div id="_tela"></div>
+
+    <div class="top-bg">
+        <div class="particles" id="particles"><div class="particle" style="width: 19.6089px; height: 19.6089px; left: 77.6402%; top: 73.6611%; animation-duration: 5.8137s; animation-delay: 2.42849s;"></div><div class="particle" style="width: 9.77706px; height: 9.77706px; left: 87.6658%; top: 53.3005%; animation-duration: 14.8085s; animation-delay: 4.73906s;"></div><div class="particle" style="width: 17.4362px; height: 17.4362px; left: 5.77126%; top: 71.1343%; animation-duration: 9.22978s; animation-delay: 3.12448s;"></div><div class="particle" style="width: 11.418px; height: 11.418px; left: 40.6528%; top: 53.6362%; animation-duration: 10.7371s; animation-delay: 2.29448s;"></div><div class="particle" style="width: 13.568px; height: 13.568px; left: 91.004%; top: 35.4125%; animation-duration: 11.0054s; animation-delay: 0.219747s;"></div><div class="particle" style="width: 15.9832px; height: 15.9832px; left: 10.5785%; top: 15.0915%; animation-duration: 10.4699s; animation-delay: 2.88908s;"></div><div class="particle" style="width: 10.8407px; height: 10.8407px; left: 77.6661%; top: 78.2742%; animation-duration: 6.02326s; animation-delay: 3.74538s;"></div><div class="particle" style="width: 10.0613px; height: 10.0613px; left: 30.4306%; top: 71.4683%; animation-duration: 13.5597s; animation-delay: 3.75799s;"></div><div class="particle" style="width: 13.4958px; height: 13.4958px; left: 67.518%; top: 55.2957%; animation-duration: 7.0974s; animation-delay: 2.62226s;"></div><div class="particle" style="width: 5.33436px; height: 5.33436px; left: 68.8687%; top: 35.2663%; animation-duration: 5.16981s; animation-delay: 3.71042s;"></div><div class="particle" style="width: 15.4243px; height: 15.4243px; left: 2.52229%; top: 97.2001%; animation-duration: 12.3954s; animation-delay: 4.5096s;"></div><div class="particle" style="width: 10.7038px; height: 10.7038px; left: 3.73588%; top: 83.2139%; animation-duration: 9.79153s; animation-delay: 1.57041s;"></div><div class="particle" style="width: 8.54833px; height: 8.54833px; left: 66.4294%; top: 51.6142%; animation-duration: 9.54799s; animation-delay: 3.94448s;"></div><div class="particle" style="width: 16.3923px; height: 16.3923px; left: 79.0393%; top: 96.1702%; animation-duration: 8.3932s; animation-delay: 2.52923s;"></div><div class="particle" style="width: 11.7769px; height: 11.7769px; left: 69.2191%; top: 74.0527%; animation-duration: 10.694s; animation-delay: 4.08503s;"></div><div class="particle" style="width: 15.4832px; height: 15.4832px; left: 10.3654%; top: 6.35755%; animation-duration: 10.5557s; animation-delay: 3.81361s;"></div><div class="particle" style="width: 16.345px; height: 16.345px; left: 24.7604%; top: 10.3554%; animation-duration: 9.13614s; animation-delay: 3.33939s;"></div><div class="particle" style="width: 14.4823px; height: 14.4823px; left: 44.9457%; top: 37.9477%; animation-duration: 8.70513s; animation-delay: 4.28231s;"></div><div class="particle" style="width: 6.85318px; height: 6.85318px; left: 78.1247%; top: 11.7211%; animation-duration: 8.85738s; animation-delay: 1.7008s;"></div><div class="particle" style="width: 19.077px; height: 19.077px; left: 98.9823%; top: 64.9086%; animation-duration: 12.1206s; animation-delay: 1.54317s;"></div></div>
+    </div>
+
+    <div class="container">
+        <div class="download-card">
+            <div class="app-icon">
+                <i class="fa-solid fa-wallet"></i>
+            </div>
+            <h1>Meu Dinheiro</h1>
+            <p class="subtitle">Organize suas contas com facilidade. Escolha o seu sistema operacional para baixar o aplicativo.</p>
+
+            <div class="download-options">
+                <a href="https://github.com/SidyFurtado/Meu-Dinheiro/releases/download/v2.3.2/Meu-Dinheiro-Setup-2.3.2.exe" download class="btn btn-windows">
+                    <i class="fa-brands fa-windows"></i>
+                    Baixar para Windows
+                </a>
+                
+                <a href="https://github.com/SidyFurtado/Meu-Dinheiro/releases/download/v2.3.2/Meu-Dinheiro-2.3.2-universal.dmg" download class="btn btn-mac">
+                    <i class="fa-brands fa-apple"></i>
+                    Baixar para Mac
+                </a>
+            </div>
+
+            <!-- Novidades da Versão -->
+            <div class="changelog-section">
+                <div class="changelog-header">
+                    <i class="fa-solid fa-star"></i>
+                    Novidades da v2.3.2
+                </div>
+                <ul>
+                    <li><strong>Resgate de dados:</strong> restauramos automaticamente as contas, saldo e categorias de usuários que vieram da versão anterior.</li>
+                    <li>O update oculto no Mac foi completamente removido; os próximos avisarão de forma explícita na tela.</li>
+                </ul>
+            </div>
+
+            <div class="info-text">
+                <i class="fa-solid fa-circle-check"></i>
+                Última versão disponível • Atualizado hoje
+            </div>
+
+            <!-- Aviso para usuários macOS -->
+            <div class="mac-notice" id="mac-notice" style="display:none;">
+                <div class="mac-notice-header">
+                    <i class="fa-brands fa-apple"></i>
+                    <span>Primeiro uso no macOS?</span>
+                </div>
+                <p>O macOS pode exibir um alerta de segurança na primeira abertura. Para resolver:</p>
+                <ol>
+                    <li>Abra <strong>Ajustes do Sistema</strong> → <strong>Privacidade e Segurança</strong></li>
+                    <li>Role até o final e clique em <strong>"Abrir Mesmo Assim"</strong></li>
+                </ol>
+                <p style="margin-top:0.5rem; font-size:0.8rem; color:#94a3b8;">
+                    Alternativa: clique com botão direito no app → Abrir → Abrir
+                </p>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fa-solid fa-bolt"></i></div>
+                <h3>Rápido</h3>
+                <p>Instalação em poucos segundos.</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                <h3>Seguro</h3>
+                <p>Livre de vírus e malwares.</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fa-solid fa-cloud"></i></div>
+                <h3>Offline</h3>
+                <p>Funciona sem internet.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Carregamento para o Download Automático -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner-container">
+            <div class="spinner"></div>
+            <i class="fa-solid fa-download spinner-icon"></i>
+        </div>
+        <div class="loading-text">Iniciando o download...</div>
+        <p class="loading-subtext">Você será redirecionado para o arquivo de instalação.</p>
+    </div>
+
+    <script>
+        // Criar partículas para o fundo premium
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 20; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            
+            // Posição e tamanho aleatórios
+            const size = Math.random() * 15 + 5;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.left = `${Math.random() * 100}%`;
+            particle.style.top = `${Math.random() * 100}%`;
+            
+            // Duração e delay da animação
+            particle.style.animationDuration = `${Math.random() * 10 + 5}s`;
+            particle.style.animationDelay = `${Math.random() * 5}s`;
+            
+            particlesContainer.appendChild(particle);
+        }
+
+        // Função de Download Automático (Sempre a versão mais recente)
+        async function startDownload(os) {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.add('active');
+
+            try {
+                // Busca a release "latest" direto do GitHub
+                const res = await fetch('https://api.github.com/repos/SidyFurtado/Meu-Dinheiro/releases/latest');
+                const data = await res.json();
+                
+                let downloadUrl = '';
+                
+                if (data && data.assets) {
+                    for (const asset of data.assets) {
+                        const name = asset.name.toLowerCase();
+                        if (os === 'windows' && name.endsWith('.exe')) {
+                            downloadUrl = asset.browser_download_url;
+                            break;
+                        } else if (os === 'mac' && (name.endsWith('.dmg') || name.endsWith('.pkg') || name.endsWith('.zip'))) {
+                            downloadUrl = asset.browser_download_url;
+                            break;
+                        }
+                    }
+                }
+
+                if (!downloadUrl) {
+                    alert('Os arquivos da última versão ainda não estão disponíveis.');
+                    overlay.classList.remove('active');
+                    return;
+                }
+
+                // Efeito visual premium antes de iniciar o download
+                setTimeout(() => {
+                    window.location.href = downloadUrl;
+                    setTimeout(() => {
+                        overlay.classList.remove('active');
+                    }, 2000);
+                }, 1500);
+
+            } catch (error) {
+                alert('Ocorreu um erro ao buscar a versão mais recente. Verifique sua conexão.');
+                overlay.classList.remove('active');
+            }
+        }
+    
+        // Mostra aviso para usuarios macOS
+        (function() {
+            var ua = navigator.userAgent || navigator.platform || '';
+            if (/mac/i.test(ua)) {
+                var el = document.getElementById('mac-notice');
+                if (el) el.style.display = 'block';
+            }
+        })();
+</script>
+
+
+</body></html>

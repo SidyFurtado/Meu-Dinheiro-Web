@@ -38,9 +38,10 @@ service cloud.firestore {
         d.category.size() > 0 &&
         d.category.size() <= 100 &&
 
-        // Data: string no formato YYYY-MM-DD (10 chars)
+        // Data: string no formato YYYY-MM-DD estrito
         d.date is string &&
         d.date.size() == 10 &&
+        d.date.matches('^\\d{4}-\\d{2}-\\d{2}$') &&
 
         // pago: booleano opcional (status de pago/consolidado)
         (!('pago' in d) || d.pago is bool) &&
@@ -79,6 +80,7 @@ service cloud.firestore {
 
         d.date is string &&
         d.date.size() == 10 &&
+        d.date.matches('^\\d{4}-\\d{2}-\\d{2}$') &&
 
         // pago: booleano opcional
         (!('pago' in d) || d.pago is bool) &&
@@ -108,8 +110,12 @@ service cloud.firestore {
         // Telefone: string opcional, máximo 30 chars
         (!('telefone' in d) || (d.telefone is string && d.telefone.size() <= 30)) &&
 
-        // Foto: string opcional (base64), máximo 100KB (~136KB base64)
-        (!('foto' in d) || d.foto == null || (d.foto is string && d.foto.size() <= 140000)) &&
+        // Foto: string opcional (base64 data URI seguro), máximo ~100KB (~140KB base64)
+        (!('foto' in d) || d.foto == null || (
+          d.foto is string &&
+          d.foto.size() <= 140000 &&
+          d.foto.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$')
+        )) &&
 
         // sobraAutomatica: booleano opcional
         (!('sobraAutomatica' in d) || d.sobraAutomatica is bool) &&
@@ -128,8 +134,10 @@ service cloud.firestore {
       // Leitura: apenas o dono do documento
       allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
 
-      // Criação: autenticado, dados válidos, UID bate
-      allow create: if isAuthenticated() && isValidTransacao();
+      // Criação: autenticado, ID seguro, dados válidos, UID bate
+      allow create: if isAuthenticated()
+                    && documentId.matches('^[a-zA-Z0-9_-]{1,64}$')
+                    && isValidTransacao();
 
       // Atualização: autenticado, dono, dados válidos, UID imutável
       allow update: if isAuthenticated()
@@ -146,7 +154,9 @@ service cloud.firestore {
     match /investimentos_app/{documentId} {
       allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
 
-      allow create: if isAuthenticated() && isValidInvestimento();
+      allow create: if isAuthenticated()
+                    && documentId.matches('^[a-zA-Z0-9_-]{1,64}$')
+                    && isValidInvestimento();
 
       allow update: if isAuthenticated()
                     && resource.data.uid == request.auth.uid
