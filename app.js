@@ -473,7 +473,7 @@ function novoProviderGoogle() {
 
 function mensagemErroGoogle(code) {
   const msgs = {
-    'auth/unauthorized-domain': 'Este endereço não está liberado para login. Acesse meu-dinheiro-6b1ab.web.app.',
+    'auth/unauthorized-domain': 'Este endereço não está liberado para login. Acesse sidyfurtado.github.io/Meu-Dinheiro-Web.',
     'auth/network-request-failed': 'Falha de rede. Verifique sua conexão e tente de novo.',
     'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos.',
     'auth/user-disabled': 'Esta conta foi desativada.',

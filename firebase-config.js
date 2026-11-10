@@ -36,7 +36,9 @@ import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-ch
 //    console.cloud.google.com/apis/credentials → "Web client (auto created by Google Service)"
 //    → URIs de redirecionamento autorizados → https://<domínio>/__/auth/handler
 //    e em Firebase Console → Authentication → Settings → Domínios autorizados.
-const DOMINIOS_COM_AUTH_PROPRIO = ['meu-dinheiro-6b1ab.web.app', 'meu-dinheiro-6b1ab.firebaseapp.com'];
+// sidyfurtado.github.io = domínio principal (GitHub Pages). As páginas /__/auth/* dele ficam
+// no repo SidyFurtado.github.io (pasta __/), copiadas de meu-dinheiro-6b1ab.firebaseapp.com.
+const DOMINIOS_COM_AUTH_PROPRIO = ['sidyfurtado.github.io', 'meu-dinheiro-6b1ab.web.app', 'meu-dinheiro-6b1ab.firebaseapp.com'];
 const AUTH_DOMAIN = DOMINIOS_COM_AUTH_PROPRIO.includes(location.hostname)
   ? location.hostname
   : 'meu-dinheiro-6b1ab.firebaseapp.com';
