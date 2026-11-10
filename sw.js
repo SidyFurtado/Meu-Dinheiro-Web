@@ -5,7 +5,7 @@
 // abrir rápido e funcionar como aplicativo. Sempre tenta a rede primeiro, então
 // quem está online recebe a versão nova logo após cada deploy.
 
-const CACHE = 'meu-dinheiro-v1';
+const CACHE = 'meu-dinheiro-v2';
 const ARQUIVOS = [
   './',
   'index.html',
@@ -34,7 +34,11 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   // Firebase, Google e qualquer outro domínio passam direto, sem cache
-  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  const url = new URL(req.url);
+  if (req.method !== 'GET' || url.origin !== self.location.origin) return;
+  // Páginas internas do Firebase (/__/auth/handler do login Google, /__/firebase/init.json):
+  // nunca passam pelo cache nem pelo fallback do index.html
+  if (url.pathname.startsWith('/__/')) return;
 
   e.respondWith(
     fetch(req)

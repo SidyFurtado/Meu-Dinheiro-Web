@@ -27,9 +27,23 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
+// LOGIN GOOGLE — authDomain IGUAL ao domínio onde o app está aberto.
+// Se o login acontecer em outro domínio (ex.: abrir o app no .web.app com authDomain
+// .firebaseapp.com), Safari/iPhone, Chrome com bloqueio de cookies de terceiros e o
+// app instalado (PWA) perdem o resultado do login e o usuário "não consegue entrar".
+// Com o mesmo domínio, o /__/auth/handler é servido pelo próprio Firebase Hosting.
+// ⚠️ Cada domínio desta lista PRECISA estar em:
+//    console.cloud.google.com/apis/credentials → "Web client (auto created by Google Service)"
+//    → URIs de redirecionamento autorizados → https://<domínio>/__/auth/handler
+//    e em Firebase Console → Authentication → Settings → Domínios autorizados.
+const DOMINIOS_COM_AUTH_PROPRIO = ['meu-dinheiro-6b1ab.web.app', 'meu-dinheiro-6b1ab.firebaseapp.com'];
+const AUTH_DOMAIN = DOMINIOS_COM_AUTH_PROPRIO.includes(location.hostname)
+  ? location.hostname
+  : 'meu-dinheiro-6b1ab.firebaseapp.com';
+
 const firebaseConfig = {
   apiKey: "AIzaSyCUg8A4kXLfyd3uOs_DAMCL8FNmaeyxGTg",
-  authDomain: "meu-dinheiro-6b1ab.firebaseapp.com",
+  authDomain: AUTH_DOMAIN,
   projectId: "meu-dinheiro-6b1ab",
   storageBucket: "meu-dinheiro-6b1ab.firebasestorage.app",
   messagingSenderId: "797217241544",
@@ -60,4 +74,7 @@ const auth = getAuth(app);
 // Configura o idioma do Auth para português (melhora UX dos popups)
 auth.languageCode = 'pt-BR';
 
-export { db, auth };
+// true quando o login acontece no mesmo domínio da página (redirect funciona em todo navegador)
+const authMesmoDominio = AUTH_DOMAIN === location.hostname;
+
+export { db, auth, authMesmoDominio };

@@ -1,9 +1,9 @@
 // =============================================
 // CONTROLE FINANCEIRO DESCOMPLICADO — App JS
 // =============================================
-import { db, auth } from './firebase-config.js';
+import { db, auth, authMesmoDominio } from './firebase-config.js';
 import { collection, addDoc, updateDoc, deleteDoc, getDocs, doc, query, where, getDoc, setDoc, writeBatch, deleteField } from 'firebase/firestore';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, OAuthProvider, signInWithPopup, sendEmailVerification, deleteUser, reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, sendEmailVerification, deleteUser, reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 // --- CONFIGURAÇÕES DE CATEGORIAS ---
 const CATEGORIAS_ENTRADA = ['Salário', 'Renda Extra', 'Rendimentos', 'Outros'];
@@ -446,18 +446,118 @@ window.fazerLogout = async () => {
   }
 };
 
-window.fazerLoginGoogle = async () => {
+// --- LOGIN COM GOOGLE (à prova de navegador) ---
+// 1) Navegador interno de app (Instagram, Facebook, TikTok, LinkedIn...): o Google
+//    BLOQUEIA login nesses navegadores ("403 disallowed_useragent"). Não adianta tentar:
+//    mostramos como abrir no navegador de verdade.
+// 2) Celular / app instalado (PWA): popup é instável → usa redirecionamento.
+// 3) Computador: popup; se o navegador bloquear o popup, cai para redirecionamento.
+const UA = navigator.userAgent || '';
+const NAVEGADOR_INTERNO = /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Line\/|musical_ly|Bytedance|TikTok|LinkedInApp|Twitter|Snapchat|Pinterest|; wv\)/i.test(UA);
+const EH_ANDROID = /Android/i.test(UA);
+const EH_CELULAR = /Android|iPhone|iPad|iPod|Mobile/i.test(UA) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(UA));
+const EH_APP_INSTALADO = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true;
+const ERROS_QUE_PEDEM_REDIRECT = new Set([
+  'auth/popup-blocked', 'auth/operation-not-supported-in-this-environment',
+  'auth/web-storage-unsupported', 'auth/internal-error', 'auth/network-request-failed'
+]);
+let _loginGoogleEmAndamento = false;
+
+function novoProviderGoogle() {
   const provider = new GoogleAuthProvider();
   provider.addScope('profile');
   provider.addScope('email');
+  provider.setCustomParameters({ prompt: 'select_account' });
+  return provider;
+}
+
+function mensagemErroGoogle(code) {
+  const msgs = {
+    'auth/unauthorized-domain': 'Este endereço não está liberado para login. Acesse meu-dinheiro-6b1ab.web.app.',
+    'auth/network-request-failed': 'Falha de rede. Verifique sua conexão e tente de novo.',
+    'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos.',
+    'auth/user-disabled': 'Esta conta foi desativada.',
+    'auth/account-exists-with-different-credential': 'Este e-mail já tem conta com senha. Entre com e-mail e senha.',
+    'auth/web-storage-unsupported': 'Seu navegador está bloqueando o armazenamento. Saia da aba anônima ou libere cookies.',
+  };
+  // O código (sem a mensagem interna do Firebase) ajuda a diagnosticar quando alguém reclamar
+  return msgs[code] || `Não foi possível entrar com Google (${code || 'erro desconhecido'}). Tente novamente.`;
+}
+
+function mostrarAvisoNavegadorInterno() {
+  document.getElementById('aviso-navegador-interno')?.remove();
+  const url = location.origin + location.pathname;
+  const aviso = document.createElement('div');
+  aviso.id = 'aviso-navegador-interno';
+  aviso.className = 'mt-4 p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-sm space-y-3 text-left';
+  const titulo = document.createElement('p');
+  titulo.className = 'font-bold';
+  titulo.textContent = 'O Google não permite login dentro deste aplicativo.';
+  const texto = document.createElement('p');
+  texto.textContent = EH_ANDROID
+    ? 'Toque no botão abaixo para abrir no Chrome e entrar com Google. Ou entre com e-mail e senha aqui mesmo.'
+    : 'Toque nos três pontinhos (⋯) no canto da tela e escolha "Abrir no navegador" (Safari). Ou entre com e-mail e senha aqui mesmo.';
+  aviso.append(titulo, texto);
+  if (EH_ANDROID) {
+    const link = document.createElement('a');
+    link.href = `intent://${location.host}${location.pathname}#Intent;scheme=https;S.browser_fallback_url=${encodeURIComponent(url)};end`;
+    link.className = 'block text-center bg-emerald-600 text-white font-bold rounded-lg py-2';
+    link.textContent = 'Abrir no navegador';
+    aviso.append(link);
+  }
+  const copiar = document.createElement('button');
+  copiar.type = 'button';
+  copiar.className = 'w-full border border-amber-400 rounded-lg py-2 font-semibold';
+  copiar.textContent = 'Copiar link do app';
+  copiar.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(url); mostrarToast('Link copiado! Cole no navegador.', 'info'); }
+    catch { mostrarToast(url, 'info'); }
+  });
+  aviso.append(copiar);
+  const botaoGoogle = document.querySelector('[data-click="fazerLoginGoogle"]');
+  (botaoGoogle?.parentElement || document.getElementById('login-container')).append(aviso);
+}
+
+window.fazerLoginGoogle = async () => {
+  if (_loginGoogleEmAndamento) return;
+  if (NAVEGADOR_INTERNO) { mostrarAvisoNavegadorInterno(); return; }
+  _loginGoogleEmAndamento = true;
+  const provider = novoProviderGoogle();
+  // Redirecionamento só é confiável quando o login roda no mesmo domínio da página
+  const preferirRedirect = authMesmoDominio && (EH_CELULAR || EH_APP_INSTALADO);
   try {
+    if (preferirRedirect) {
+      await signInWithRedirect(auth, provider);
+      return; // a página sai para o Google; o resultado volta em getRedirectResult
+    }
     await signInWithPopup(auth, provider);
   } catch (error) {
-    if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') return;
-    // Mensagem genérica — não expõe error.message do Firebase
-    mostrarToast('Erro ao entrar com Google. Tente novamente.', 'error');
+    const code = error?.code || '';
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+    console.warn('[login-google]', code);
+    if (!preferirRedirect && ERROS_QUE_PEDEM_REDIRECT.has(code)) {
+      try { await signInWithRedirect(auth, provider); return; }
+      catch (e2) { console.warn('[login-google:redirect]', e2?.code); mostrarToast(mensagemErroGoogle(e2?.code), 'error'); return; }
+    }
+    mostrarToast(mensagemErroGoogle(code), 'error');
+  } finally {
+    _loginGoogleEmAndamento = false;
   }
 };
+
+// Ao voltar do Google (fluxo por redirecionamento): conclui o login ou mostra o erro.
+getRedirectResult(auth).catch((error) => {
+  const code = error?.code || '';
+  if (!code || code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+  console.warn('[login-google:retorno]', code);
+  mostrarToast(mensagemErroGoogle(code), 'error');
+});
+
+// Já avisa no carregamento, antes mesmo do clique, quem abriu pelo navegador do Instagram etc.
+if (NAVEGADOR_INTERNO) {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mostrarAvisoNavegadorInterno);
+  else mostrarAvisoNavegadorInterno();
+}
 
 
 onAuthStateChanged(auth, async (user) => {
